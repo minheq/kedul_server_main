@@ -1,4 +1,4 @@
-module github.com/minheq/kedulv2/service_salon
+module github.com/minheq/kedul_server_main
 
 go 1.13
 
@@ -11,6 +11,7 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/cors v1.0.0
 	github.com/go-chi/jwtauth v4.0.3+incompatible
+	github.com/go-chi/render v1.0.1
 	github.com/go-delve/delve v1.3.2 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.30.2+incompatible
