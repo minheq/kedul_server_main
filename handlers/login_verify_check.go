@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -35,14 +34,14 @@ func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http
 			return
 		}
 
-		state, err := LoginVerifyCheck(data.ClientState, data.Code, store, tokenAuth)
-		
+		accessToken, err := LoginVerifyCheck(data.ClientState, data.Code, store, tokenAuth)
+
 		if err != nil {
 			_ = render.Render(w, r, ErrInvalidRequest(err))
 			return
 		}
 
-		fmt.Fprint(w, state)
+		render.JSON(w, r, &loginVerifyCheckResponse{AccessToken: accessToken})
 	}
 }
 

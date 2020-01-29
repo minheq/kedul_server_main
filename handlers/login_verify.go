@@ -22,7 +22,7 @@ func (p *loginVerifyRequest) Bind(r *http.Request) error {
 }
 
 type loginVerifyResponse struct {
-	State string `json:"state"`
+	ClientState string `json:"clientState"`
 }
 
 // HandleLoginVerify handles login verification initialization
@@ -42,7 +42,7 @@ func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFun
 			return
 		}
 
-		render.JSON(w, r, &loginVerifyResponse{State: state})
+		render.JSON(w, r, &loginVerifyResponse{ClientState: state})
 	}
 }
 
