@@ -24,6 +24,10 @@ type loginVerifyCheckResponse struct {
 	AccessToken string `json:"accessToken"`
 }
 
+func (rd *loginVerifyCheckResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 // HandleLoginVerifyCheck handles login verification checking
 func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -41,30 +45,28 @@ func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http
 			return
 		}
 
-		render.JSON(w, r, &loginVerifyCheckResponse{AccessToken: accessToken})
+		render.Render(w, r, &loginVerifyCheckResponse{AccessToken: accessToken})
 	}
 }
 
 // LoginVerifyCheck returns accessToken given the clientState and code match the persisted verification code
 func LoginVerifyCheck(clientState string, code string, store models.Store, tokenAuth *jwtauth.JWTAuth) (string, error) {
-	const op errors.Op = "handlers.LoginVerifyCheck"
+	const op errors.Op = "handlers/login_verify_check.LoginVerifyCheck"
 
 	verificationCode, err := store.GetVerificationCodeByClientStateAndCode(clientState, code)
 
 	if err != nil {
-		return "", errors.E(op, err, "could not get verification code")
+		return "", errors.E(op, err, "verification code not found")
 	}
 
 	if verificationCode.ExpiredAt.Before(time.Now()) {
 		return "", errors.E(op, "verification code expired", errors.Forbidden)
 	}
 
-	// Verify
-
 	account, err := store.GetAccountByID(verificationCode.AccountID)
 
 	if err != nil {
-		return "", errors.E(op, err, "could not get account")
+		return "", errors.E(op, err, "account not found")
 	}
 
 	account.IsPhoneNumberVerified = true

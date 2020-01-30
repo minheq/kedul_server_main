@@ -25,6 +25,10 @@ type loginVerifyResponse struct {
 	ClientState string `json:"clientState"`
 }
 
+func (rd *loginVerifyResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 // HandleLoginVerify handles login verification initialization
 func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -42,18 +46,18 @@ func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFun
 			return
 		}
 
-		render.JSON(w, r, &loginVerifyResponse{ClientState: state})
+		render.Render(w, r, &loginVerifyResponse{ClientState: state})
 	}
 }
 
 // LoginVerify login verification initialization core logic
 func LoginVerify(phoneNumber string, countryCode string, store models.Store, smsSender sms.Sender) (string, error) {
-	const op errors.Op = "handlers/LoginVerify"
+	const op errors.Op = "handlers/login_verify.LoginVerify"
 
 	parsedPhoneNumber, err := phonenumbers.Parse(phoneNumber, countryCode)
 
 	if err != nil {
-		return "", errors.E(op, err, "failed to parse phone number")
+		return "", errors.E(op, err, "invalid phone number")
 	}
 
 	formattedPhoneNumber := phonenumbers.Format(parsedPhoneNumber, phonenumbers.NATIONAL)
@@ -64,7 +68,7 @@ func LoginVerify(phoneNumber string, countryCode string, store models.Store, sms
 	account, err := store.GetAccountByPhoneNumber(formattedPhoneNumber, countryCode)
 
 	if err != nil && errors.Is(errors.NotFound, err) == false {
-		return "", errors.E(op, err, "could not get account")
+		return "", errors.E(op, err, "account not found")
 	}
 
 	// Create and persist new account if it didn't exist yet
