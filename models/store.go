@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+
 	"github.com/minheq/kedul_server_main/errors"
 )
 
@@ -17,7 +18,7 @@ func NewStore(db *sql.DB) Store {
 
 // GetVerificationCodeByClientStateAndCode gets VerificationCode by code
 func (s *Store) GetVerificationCodeByClientStateAndCode(clientState string, code string) (*VerificationCode, error) {
-	const op errors.Op = "account/store.GetVerificationCodeByClientStateAndCode"
+	const op = "models/store.GetVerificationCodeByClientStateAndCode"
 
 	query := `
 		SELECT id, account_id, code, client_state, code_type, phone_number, country_code, expired_at, created_at
@@ -33,11 +34,11 @@ func (s *Store) GetVerificationCodeByClientStateAndCode(clientState string, code
 	err := row.Scan(&vc.ID, &vc.AccountID, &vc.Code, &vc.ClientState, &vc.CodeType, &vc.PhoneNumber, &vc.CountryCode, &vc.ExpiredAt, &vc.CreatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, errors.E(op, err, errors.NotFound)
+		return nil, errors.NotFound(op)
 	}
 
 	if err != nil {
-		return nil, errors.E(op, err)
+		return nil, errors.Unexpected(op, err)
 	}
 
 	return &vc, nil
@@ -45,7 +46,7 @@ func (s *Store) GetVerificationCodeByClientStateAndCode(clientState string, code
 
 // StoreVerificationCode persists VerificationCode
 func (s *Store) StoreVerificationCode(vc *VerificationCode) error {
-	const op errors.Op = "account/store.StoreVerificationCode"
+	const op = "models/store.StoreVerificationCode"
 
 	query := `
 		INSERT INTO verification_code (id, account_id, code, client_state, code_type, phone_number, country_code, expired_at, created_at)
@@ -55,7 +56,7 @@ func (s *Store) StoreVerificationCode(vc *VerificationCode) error {
 	_, err := s.db.Exec(query, vc.ID, vc.AccountID, vc.Code, vc.ClientState, vc.CodeType, vc.PhoneNumber, vc.CountryCode, vc.ExpiredAt, vc.CreatedAt)
 
 	if err != nil {
-		return errors.E(op, err)
+		return errors.Unexpected(op, err)
 	}
 
 	return nil
@@ -63,7 +64,7 @@ func (s *Store) StoreVerificationCode(vc *VerificationCode) error {
 
 // RemoveVerificationCodeByPhoneNumber removes VerificationCode
 func (s *Store) RemoveVerificationCodeByPhoneNumber(phoneNumber string, countryCode string) error {
-	const op errors.Op = "account/store.RemoveVerificationCodeByPhoneNumber"
+	const op = "models/store.RemoveVerificationCodeByPhoneNumber"
 
 	query := `
 		DELETE FROM verification_code
@@ -73,7 +74,7 @@ func (s *Store) RemoveVerificationCodeByPhoneNumber(phoneNumber string, countryC
 	_, err := s.db.Exec(query, phoneNumber, countryCode)
 
 	if err != nil {
-		return errors.E(op, err)
+		return errors.Unexpected(op, err)
 	}
 
 	return nil
@@ -81,7 +82,7 @@ func (s *Store) RemoveVerificationCodeByPhoneNumber(phoneNumber string, countryC
 
 // RemoveVerificationCodeByID removes VerificationCode by Id
 func (s *Store) RemoveVerificationCodeByID(id string) error {
-	const op errors.Op = "account/store.RemoveVerificationCodeByID"
+	const op = "models/store.RemoveVerificationCodeByID"
 
 	query := `
 		DELETE FROM verification_code
@@ -91,17 +92,15 @@ func (s *Store) RemoveVerificationCodeByID(id string) error {
 	_, err := s.db.Exec(query, id)
 
 	if err != nil {
-		return errors.E(op, err)
+		return errors.Unexpected(op, err)
 	}
 
 	return nil
 }
 
-
-
 // GetAccountByID gets Account by ID
 func (s *Store) GetAccountByID(id string) (*Account, error) {
-	const op errors.Op = "account/store.GetAccountByPhoneNumber"
+	const op = "models/store.GetAccountByPhoneNumber"
 
 	query := `
 		SELECT id, full_name, phone_number, country_code, is_phone_number_verified, created_at, updated_at
@@ -116,11 +115,11 @@ func (s *Store) GetAccountByID(id string) (*Account, error) {
 	err := row.Scan(&account.ID, &account.FullName, &account.PhoneNumber, &account.CountryCode, &account.IsPhoneNumberVerified, &account.CreatedAt, &account.UpdatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, errors.E(op, err, errors.NotFound)
+		return nil, errors.NotFound(op)
 	}
 
 	if err != nil {
-		return nil, errors.E(op, err)
+		return nil, errors.Unexpected(op, err)
 	}
 
 	return &account, nil
@@ -128,7 +127,7 @@ func (s *Store) GetAccountByID(id string) (*Account, error) {
 
 // GetAccountByPhoneNumber gets Account by Phone Number
 func (s *Store) GetAccountByPhoneNumber(phoneNumber string, countryCode string) (*Account, error) {
-	const op errors.Op = "account/store.GetAccountByPhoneNumber"
+	const op = "models/store.GetAccountByPhoneNumber"
 
 	query := `
 		SELECT id, full_name, phone_number, country_code, is_phone_number_verified, created_at, updated_at
@@ -144,11 +143,11 @@ func (s *Store) GetAccountByPhoneNumber(phoneNumber string, countryCode string) 
 	err := row.Scan(&account.ID, &account.FullName, &account.PhoneNumber, &account.CountryCode, &account.IsPhoneNumberVerified, &account.CreatedAt, &account.UpdatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, errors.E(op, err, errors.NotFound)
+		return nil, errors.NotFound(op)
 	}
 
 	if err != nil {
-		return nil, errors.E(op, err)
+		return nil, errors.Unexpected(op, err)
 	}
 
 	return &account, nil
@@ -156,7 +155,7 @@ func (s *Store) GetAccountByPhoneNumber(phoneNumber string, countryCode string) 
 
 // StoreAccount persists Account
 func (s *Store) StoreAccount(account *Account) error {
-	const op errors.Op = "account/store.StoreAccount"
+	const op = "models/store.StoreAccount"
 
 	query := `
 		INSERT INTO account (id, full_name, phone_number, country_code, is_phone_number_verified, created_at, updated_at)
@@ -166,7 +165,7 @@ func (s *Store) StoreAccount(account *Account) error {
 	_, err := s.db.Exec(query, account.ID, account.FullName, account.PhoneNumber, account.CountryCode, account.IsPhoneNumberVerified, account.CreatedAt, account.UpdatedAt)
 
 	if err != nil {
-		return errors.E(op, err)
+		return errors.Unexpected(op, err)
 	}
 
 	return nil
@@ -174,7 +173,7 @@ func (s *Store) StoreAccount(account *Account) error {
 
 // UpdateAccount updates Account including all fields
 func (s *Store) UpdateAccount(account *Account) error {
-	const op errors.Op = "account/store.UpdateAccount"
+	const op = "models/store.UpdateAccount"
 
 	query := `
 		UPDATE account
@@ -185,7 +184,7 @@ func (s *Store) UpdateAccount(account *Account) error {
 	_, err := s.db.Exec(query, account.ID, account.FullName, account.PhoneNumber, account.CountryCode, account.IsPhoneNumberVerified, account.CreatedAt, account.UpdatedAt)
 
 	if err != nil {
-		return errors.E(op, err)
+		return errors.Unexpected(op, err)
 	}
 
 	return nil

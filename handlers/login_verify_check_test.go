@@ -88,7 +88,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	t.Run("should return error when log in verify with expired verification code", func(t *testing.T) {
 		_, err := LoginVerifyCheck(expiredVerificationCode.ClientState, expiredVerificationCode.Code, store, tokenAuth)
 
-		if !errors.Is(errors.Forbidden, err) {
+		if !errors.Is(errors.KindInvalid, err) {
 			t.Error("should forbid")
 		}
 	})

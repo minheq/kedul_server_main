@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/render"
@@ -35,14 +36,15 @@ func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFun
 		data := &loginVerifyRequest{}
 
 		if err := render.Bind(r, data); err != nil {
-			_ = render.Render(w, r, ErrInvalidRequest(err))
+			_ = render.Render(w, r, NewErrResponse(err))
 			return
 		}
 
 		state, err := LoginVerify(data.PhoneNumber, data.CountryCode, store, smsSender)
 
 		if err != nil {
-			_ = render.Render(w, r, ErrInvalidRequest(err))
+			fmt.Println(err)
+			_ = render.Render(w, r, NewErrResponse(err))
 			return
 		}
 
@@ -52,23 +54,20 @@ func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFun
 
 // LoginVerify login verification initialization core logic
 func LoginVerify(phoneNumber string, countryCode string, store models.Store, smsSender sms.Sender) (string, error) {
-	const op errors.Op = "handlers/login_verify.LoginVerify"
+	const op = "handlers/login_verify.LoginVerify"
 
 	parsedPhoneNumber, err := phonenumbers.Parse(phoneNumber, countryCode)
 
 	if err != nil {
-		return "", errors.E(op, err, "invalid phone number")
+		return "", errors.Invalid(op, "phone number supplied is invalid")
 	}
 
 	formattedPhoneNumber := phonenumbers.Format(parsedPhoneNumber, phonenumbers.NATIONAL)
 
-	clientState := random.String(50)
-	code := random.Number(6)
-
 	account, err := store.GetAccountByPhoneNumber(formattedPhoneNumber, countryCode)
 
-	if err != nil && errors.Is(errors.NotFound, err) == false {
-		return "", errors.E(op, err, "account not found")
+	if err != nil && errors.Is(errors.KindNotFound, err) == false {
+		return "", errors.Unexpected(op, err)
 	}
 
 	// Create and persist new account if it didn't exist yet
@@ -78,28 +77,31 @@ func LoginVerify(phoneNumber string, countryCode string, store models.Store, sms
 		err = store.StoreAccount(account)
 
 		if err != nil {
-			return "", errors.E(op, err, "could not store account")
+			return "", errors.Unexpected(op, err)
 		}
 	}
 
 	err = store.RemoveVerificationCodeByPhoneNumber(formattedPhoneNumber, countryCode)
 
 	if err != nil {
-		return "", errors.E(op, err, "could not remove verification code")
+		return "", errors.Unexpected(op, err)
 	}
+
+	clientState := random.String(50)
+	code := random.Number(6)
 
 	newVerificationCode := models.NewVerificationCode(clientState, code, account.ID, formattedPhoneNumber, countryCode, "LOGIN")
 
 	err = store.StoreVerificationCode(newVerificationCode)
 
 	if err != nil {
-		return "", errors.E(op, err, "could not store verification code")
+		return "", errors.Unexpected(op, err)
 	}
 
 	err = smsSender.SendSMS(formattedPhoneNumber, countryCode, code)
 
 	if err != nil {
-		return "", errors.E(op, err, "send sms failed")
+		return "", errors.Unexpected(op, err)
 	}
 
 	return clientState, nil

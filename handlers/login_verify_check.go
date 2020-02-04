@@ -34,14 +34,14 @@ func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http
 		data := &loginVerifyCheckRequest{}
 
 		if err := render.Bind(r, data); err != nil {
-			_ = render.Render(w, r, ErrInvalidRequest(err))
+			_ = render.Render(w, r, NewErrResponse(err))
 			return
 		}
 
 		accessToken, err := LoginVerifyCheck(data.ClientState, data.Code, store, tokenAuth)
 
 		if err != nil {
-			_ = render.Render(w, r, ErrInvalidRequest(err))
+			_ = render.Render(w, r, NewErrResponse(err))
 			return
 		}
 
@@ -51,22 +51,22 @@ func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http
 
 // LoginVerifyCheck returns accessToken given the clientState and code match the persisted verification code
 func LoginVerifyCheck(clientState string, code string, store models.Store, tokenAuth *jwtauth.JWTAuth) (string, error) {
-	const op errors.Op = "handlers/login_verify_check.LoginVerifyCheck"
+	const op = "handlers/login_verify_check.LoginVerifyCheck"
 
 	verificationCode, err := store.GetVerificationCodeByClientStateAndCode(clientState, code)
 
 	if err != nil {
-		return "", errors.E(op, err, "verification code not found")
+		return "", errors.Invalid(op, "verification code not found")
 	}
 
 	if verificationCode.ExpiredAt.Before(time.Now()) {
-		return "", errors.E(op, "verification code expired", errors.Forbidden)
+		return "", errors.Invalid(op, "verification code expired")
 	}
 
 	account, err := store.GetAccountByID(verificationCode.AccountID)
 
 	if err != nil {
-		return "", errors.E(op, err, "account not found")
+		return "", errors.Invalid(op, "account not found")
 	}
 
 	account.IsPhoneNumberVerified = true
@@ -75,19 +75,19 @@ func LoginVerifyCheck(clientState string, code string, store models.Store, token
 	err = store.UpdateAccount(account)
 
 	if err != nil {
-		return "", errors.E(op, err, "could not update account")
+		return "", errors.Unexpected(op, err)
 	}
 
 	err = store.RemoveVerificationCodeByID(verificationCode.ID)
 
 	if err != nil {
-		return "", errors.E(op, err, "could not remove verification code")
+		return "", errors.Unexpected(op, err)
 	}
 
 	_, accessToken, err := tokenAuth.Encode(jwt.MapClaims{"account_id": account.ID})
 
 	if err != nil {
-		return "", errors.E(op, err, "failed to generate access token")
+		return "", errors.Unexpected(op, err)
 	}
 
 	return accessToken, nil
