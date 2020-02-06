@@ -1,10 +1,9 @@
-package handlers
+package errors
 
 import (
 	"net/http"
 
 	"github.com/go-chi/render"
-	"github.com/minheq/kedul_server_main/errors"
 )
 
 // ErrResponse represents standardized error response
@@ -28,13 +27,13 @@ func HTTPStatusCode(err error) int {
 		return http.StatusOK
 	}
 
-	if e, ok := err.(*errors.Error); ok && e.Kind != "" {
+	if e, ok := err.(*Error); ok && e.Kind != "" {
 		switch e.Kind {
-		case errors.KindInvalid:
+		case KindInvalid:
 			return http.StatusBadRequest
-		case errors.KindUnauthorized:
+		case KindUnauthorized:
 			return http.StatusUnauthorized
-		case errors.KindNotFound:
+		case KindNotFound:
 			return http.StatusNotFound
 		default:
 			return http.StatusInternalServerError
@@ -50,6 +49,6 @@ func HTTPStatusCode(err error) int {
 func NewErrResponse(err error) render.Renderer {
 	return &ErrResponse{
 		HTTPStatusCode: HTTPStatusCode(err),
-		Message:        errors.ErrorMessage(err),
+		Message:        ErrorMessage(err),
 	}
 }

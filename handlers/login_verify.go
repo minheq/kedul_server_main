@@ -36,7 +36,7 @@ func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFun
 		data := &loginVerifyRequest{}
 
 		if err := render.Bind(r, data); err != nil {
-			_ = render.Render(w, r, NewErrResponse(err))
+			_ = render.Render(w, r, errors.NewErrResponse(err))
 			return
 		}
 
@@ -44,7 +44,7 @@ func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFun
 
 		if err != nil {
 			fmt.Println(err)
-			_ = render.Render(w, r, NewErrResponse(err))
+			_ = render.Render(w, r, errors.NewErrResponse(err))
 			return
 		}
 

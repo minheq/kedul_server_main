@@ -34,14 +34,14 @@ func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http
 		data := &loginVerifyCheckRequest{}
 
 		if err := render.Bind(r, data); err != nil {
-			_ = render.Render(w, r, NewErrResponse(err))
+			_ = render.Render(w, r, errors.NewErrResponse(err))
 			return
 		}
 
 		accessToken, err := LoginVerifyCheck(data.ClientState, data.Code, store, tokenAuth)
 
 		if err != nil {
-			_ = render.Render(w, r, NewErrResponse(err))
+			_ = render.Render(w, r, errors.NewErrResponse(err))
 			return
 		}
 

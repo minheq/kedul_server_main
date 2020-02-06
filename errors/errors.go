@@ -10,7 +10,7 @@ const (
 	KindInvalid      = "invalid"      // action cannot be performed or bad request
 	KindUnauthorized = "unauthorized" // authorization error
 	KindUnexpected   = "unexpected"   // unexpected error
-	KindNotFound     = "not found"    // unexpected error
+	KindNotFound     = "not found"    // not found error
 )
 
 // Error defines a standard application error.
