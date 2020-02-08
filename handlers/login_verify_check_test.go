@@ -13,7 +13,7 @@ import (
 
 func TestLoginHappyPath(t *testing.T) {
 	var code string
-	var clientState string
+	var verificationID string
 	var err error
 	db, cleanup := testutils.SetupDB()
 	store := models.NewStore(db)
@@ -23,7 +23,7 @@ func TestLoginHappyPath(t *testing.T) {
 	defer cleanup()
 
 	t.Run("should send code and return state when login start", func(t *testing.T) {
-		clientState, err = LoginVerify("999111333", "VN", store, smsSender)
+		verificationID, err = LoginVerify("999111333", "VN", store, smsSender)
 		code = smsSender.Text
 
 		if err != nil {
@@ -36,7 +36,7 @@ func TestLoginHappyPath(t *testing.T) {
 	})
 
 	t.Run("should return access token when login verified", func(t *testing.T) {
-		accessToken, err := LoginVerifyCheck(clientState, code, store, tokenAuth)
+		accessToken, err := LoginVerifyCheck(verificationID, code, store, tokenAuth)
 
 		if err != nil {
 			t.Error(err)
@@ -67,15 +67,15 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	}
 
 	expiredVerificationCode := &models.VerificationCode{
-		ID:          uuid.Must(uuid.New(), nil).String(),
-		AccountID:   account.ID,
-		Code:        "111111",
-		CodeType:    "LOGIN",
-		ClientState: "ABC",
-		PhoneNumber: account.PhoneNumber,
-		CountryCode: account.CountryCode,
-		ExpiredAt:   now.Add(time.Duration(-1) * time.Minute),
-		CreatedAt:   now,
+		ID:             uuid.Must(uuid.New(), nil).String(),
+		AccountID:      account.ID,
+		Code:           "111111",
+		CodeType:       "LOGIN",
+		VerificationID: "ABC",
+		PhoneNumber:    account.PhoneNumber,
+		CountryCode:    account.CountryCode,
+		ExpiredAt:      now.Add(time.Duration(-1) * time.Minute),
+		CreatedAt:      now,
 	}
 
 	err = store.StoreVerificationCode(expiredVerificationCode)
@@ -86,7 +86,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	}
 
 	t.Run("should return error when log in verify with expired verification code", func(t *testing.T) {
-		_, err := LoginVerifyCheck(expiredVerificationCode.ClientState, expiredVerificationCode.Code, store, tokenAuth)
+		_, err := LoginVerifyCheck(expiredVerificationCode.VerificationID, expiredVerificationCode.Code, store, tokenAuth)
 
 		if !errors.Is(errors.KindInvalid, err) {
 			t.Error("should forbid")

@@ -16,22 +16,22 @@ func NewStore(db *sql.DB) Store {
 	return Store{db: db}
 }
 
-// GetVerificationCodeByClientStateAndCode gets VerificationCode by code
-func (s *Store) GetVerificationCodeByClientStateAndCode(clientState string, code string) (*VerificationCode, error) {
-	const op = "models/store.GetVerificationCodeByClientStateAndCode"
+// GetVerificationCodeByIDAndCode gets VerificationCode by code
+func (s *Store) GetVerificationCodeByIDAndCode(verificationID string, code string) (*VerificationCode, error) {
+	const op = "models/store.GetVerificationCodeByIDAndCode"
 
 	query := `
-		SELECT id, account_id, code, client_state, code_type, phone_number, country_code, expired_at, created_at
+		SELECT id, account_id, code, verification_id, code_type, phone_number, country_code, expired_at, created_at
 		FROM verification_code
-		WHERE client_state=$1
+		WHERE verification_id=$1
 			AND code=$2;
 	`
 
 	var vc VerificationCode
 
-	row := s.db.QueryRow(query, clientState, code)
+	row := s.db.QueryRow(query, verificationID, code)
 
-	err := row.Scan(&vc.ID, &vc.AccountID, &vc.Code, &vc.ClientState, &vc.CodeType, &vc.PhoneNumber, &vc.CountryCode, &vc.ExpiredAt, &vc.CreatedAt)
+	err := row.Scan(&vc.ID, &vc.AccountID, &vc.Code, &vc.VerificationID, &vc.CodeType, &vc.PhoneNumber, &vc.CountryCode, &vc.ExpiredAt, &vc.CreatedAt)
 
 	if err == sql.ErrNoRows {
 		return nil, errors.NotFound(op)
@@ -49,11 +49,11 @@ func (s *Store) StoreVerificationCode(vc *VerificationCode) error {
 	const op = "models/store.StoreVerificationCode"
 
 	query := `
-		INSERT INTO verification_code (id, account_id, code, client_state, code_type, phone_number, country_code, expired_at, created_at)
+		INSERT INTO verification_code (id, account_id, code, verification_id, code_type, phone_number, country_code, expired_at, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	_, err := s.db.Exec(query, vc.ID, vc.AccountID, vc.Code, vc.ClientState, vc.CodeType, vc.PhoneNumber, vc.CountryCode, vc.ExpiredAt, vc.CreatedAt)
+	_, err := s.db.Exec(query, vc.ID, vc.AccountID, vc.Code, vc.VerificationID, vc.CodeType, vc.PhoneNumber, vc.CountryCode, vc.ExpiredAt, vc.CreatedAt)
 
 	if err != nil {
 		return errors.Unexpected(op, err)

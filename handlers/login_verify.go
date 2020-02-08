@@ -23,7 +23,7 @@ func (p *loginVerifyRequest) Bind(r *http.Request) error {
 }
 
 type loginVerifyResponse struct {
-	ClientState string `json:"clientState"`
+	VerificationID string `json:"verificationID"`
 }
 
 func (rd *loginVerifyResponse) Render(w http.ResponseWriter, r *http.Request) error {
@@ -48,7 +48,7 @@ func HandleLoginVerify(store models.Store, smsSender sms.Sender) http.HandlerFun
 			return
 		}
 
-		render.Render(w, r, &loginVerifyResponse{ClientState: state})
+		render.Render(w, r, &loginVerifyResponse{VerificationID: state})
 	}
 }
 
@@ -87,10 +87,10 @@ func LoginVerify(phoneNumber string, countryCode string, store models.Store, sms
 		return "", errors.Unexpected(op, err)
 	}
 
-	clientState := random.String(50)
+	verificationID := random.String(50)
 	code := random.Number(6)
 
-	newVerificationCode := models.NewVerificationCode(clientState, code, account.ID, formattedPhoneNumber, countryCode, "LOGIN")
+	newVerificationCode := models.NewVerificationCode(verificationID, code, account.ID, formattedPhoneNumber, countryCode, "LOGIN")
 
 	err = store.StoreVerificationCode(newVerificationCode)
 
@@ -104,5 +104,5 @@ func LoginVerify(phoneNumber string, countryCode string, store models.Store, sms
 		return "", errors.Unexpected(op, err)
 	}
 
-	return clientState, nil
+	return verificationID, nil
 }

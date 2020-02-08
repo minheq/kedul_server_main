@@ -9,9 +9,9 @@ import (
 
 func TestLoginVerifyTwice(t *testing.T) {
 	var codeOne string
-	var clientStateOne string
+	var verificationIDOne string
 	var codeTwo string
-	var clientStateTwo string
+	var verificationIDTwo string
 	var err error
 	db, cleanup := testutils.SetupDB()
 	store := models.NewStore(db)
@@ -20,7 +20,7 @@ func TestLoginVerifyTwice(t *testing.T) {
 	defer cleanup()
 
 	t.Run("should send code and return state when login start first time", func(t *testing.T) {
-		clientStateOne, err = LoginVerify("999111333", "VN", store, smsSender)
+		verificationIDOne, err = LoginVerify("999111333", "VN", store, smsSender)
 		codeOne = smsSender.Text
 
 		if err != nil {
@@ -34,7 +34,7 @@ func TestLoginVerifyTwice(t *testing.T) {
 
 	// This behaves like "resending"
 	t.Run("should send different code and state when login start second time", func(t *testing.T) {
-		clientStateTwo, err = LoginVerify("999111333", "VN", store, smsSender)
+		verificationIDTwo, err = LoginVerify("999111333", "VN", store, smsSender)
 		codeTwo = smsSender.Text
 
 		if err != nil {
@@ -45,8 +45,8 @@ func TestLoginVerifyTwice(t *testing.T) {
 			t.Error("same code")
 		}
 
-		if clientStateOne == clientStateTwo {
-			t.Error("same client state")
+		if verificationIDOne == verificationIDTwo {
+			t.Error("same verification id")
 		}
 	})
 }

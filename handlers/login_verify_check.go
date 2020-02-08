@@ -12,8 +12,8 @@ import (
 )
 
 type loginVerifyCheckRequest struct {
-	ClientState string `json:"clientState"`
-	Code        string `json:"code"`
+	VerificationID string `json:"verificationID"`
+	Code           string `json:"code"`
 }
 
 func (p *loginVerifyCheckRequest) Bind(r *http.Request) error {
@@ -38,7 +38,7 @@ func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http
 			return
 		}
 
-		accessToken, err := LoginVerifyCheck(data.ClientState, data.Code, store, tokenAuth)
+		accessToken, err := LoginVerifyCheck(data.VerificationID, data.Code, store, tokenAuth)
 
 		if err != nil {
 			_ = render.Render(w, r, errors.NewErrResponse(err))
@@ -49,11 +49,11 @@ func HandleLoginVerifyCheck(store models.Store, tokenAuth *jwtauth.JWTAuth) http
 	}
 }
 
-// LoginVerifyCheck returns accessToken given the clientState and code match the persisted verification code
-func LoginVerifyCheck(clientState string, code string, store models.Store, tokenAuth *jwtauth.JWTAuth) (string, error) {
+// LoginVerifyCheck returns accessToken given the verificationID and code match the persisted verification code
+func LoginVerifyCheck(verificationID string, code string, store models.Store, tokenAuth *jwtauth.JWTAuth) (string, error) {
 	const op = "handlers/login_verify_check.LoginVerifyCheck"
 
-	verificationCode, err := store.GetVerificationCodeByClientStateAndCode(clientState, code)
+	verificationCode, err := store.GetVerificationCodeByIDAndCode(verificationID, code)
 
 	if err != nil {
 		return "", errors.Invalid(op, "verification code not found")
