@@ -1,24 +1,20 @@
 # Service Salon
 
-## Development
+## Scripts
 
-### Start
 ```zshrc
-go build
-./kedul_server_main
-```
+# run the app
+make start
 
-### Migrate Up
-```zshrc
-migrate -database "postgres://postgres@127.0.0.1:5432/kedul?sslmode=disable" -path ./migrations up
-```
+# run tests
+make test
 
-### Migrate Down
-```zshrc
-migrate -database "postgres://postgres@127.0.0.1:5432/kedul?sslmode=disable" -path ./migrations down
-```
+# run database migrations up
+make migrate-up
 
-### Create new migration file
-```zshrc
-migrate create -ext sql -dir ./migrations -seq create_users_table
+# run database migrations down
+make migrate-down
+
+# create migration file
+make create-migration name=<migration_file_name>
 ```

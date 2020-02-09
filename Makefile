@@ -1,3 +1,9 @@
+start: ## run the app
+	go build && ./kedul_server_main
+
+test: ## run tests
+	go test ./handlers -v
+
 migrate-up: ## run database migrations up
 	migrate -database "postgres://postgres@127.0.0.1:5432/kedul?sslmode=disable" -path ./migrations up
 

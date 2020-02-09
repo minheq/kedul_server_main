@@ -27,7 +27,7 @@ func HTTPStatusCode(err error) int {
 		return http.StatusOK
 	}
 
-	if e, ok := err.(*Error); ok && e.Kind != "" {
+	if e, ok := err.(*Error); ok && e.Kind != 0 {
 		switch e.Kind {
 		case KindInvalid:
 			return http.StatusBadRequest

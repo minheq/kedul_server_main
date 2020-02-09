@@ -5,18 +5,36 @@ import (
 	"fmt"
 )
 
+// Kind is category of the error
+type Kind int
+
 // Application error categories.
 const (
-	KindInvalid      = "invalid"      // action cannot be performed or bad request
-	KindUnauthorized = "unauthorized" // authorization error
-	KindUnexpected   = "unexpected"   // unexpected error
-	KindNotFound     = "not found"    // not found error
+	KindInvalid      Kind = iota + 1 // action cannot be performed or bad request
+	KindUnauthorized                 // authorization error
+	KindNotFound                     // not found error
+	KindUnexpected                   // unexpected error
 )
+
+func (kind Kind) String() string {
+	switch kind {
+	case KindInvalid:
+		return "invalid"
+	case KindUnauthorized:
+		return "unauthorized"
+	case KindNotFound:
+		return "not found"
+	case KindUnexpected:
+		return "unexpected"
+	}
+
+	return "unknown error kind"
+}
 
 // Error defines a standard application error.
 type Error struct {
 	// Category of the error
-	Kind string
+	Kind Kind
 
 	// Human-readable message.
 	Message string
@@ -61,28 +79,13 @@ func (e *Error) Error() string {
 		return b.String()
 	}
 
-	if e.Kind != "" {
+	if e.Kind != 0 {
 		fmt.Fprintf(&b, "<%s> ", e.Kind)
 	}
 
 	b.WriteString(e.Message)
 
 	return b.String()
-}
-
-// ErrorKind returns the code of the root error, if available. Otherwise returns KindUnexpected.
-func ErrorKind(err error) string {
-	if err == nil {
-		return ""
-	}
-
-	if e, ok := err.(*Error); ok && e.Kind != "" {
-		return e.Kind
-	} else if ok && e.Err != nil {
-		return ErrorKind(e.Err)
-	}
-
-	return KindUnexpected
 }
 
 // ErrorMessage extract messages from error values
@@ -100,7 +103,7 @@ func ErrorMessage(err error) string {
 }
 
 // Is compares whether error matches the kind
-func Is(kind string, err error) bool {
+func Is(kind Kind, err error) bool {
 	e, ok := err.(*Error)
 
 	if !ok {
