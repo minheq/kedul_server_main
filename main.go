@@ -10,9 +10,8 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth"
 	_ "github.com/lib/pq"
-	"github.com/minheq/kedul_server_main/handlers"
+	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/sms"
-	"github.com/minheq/kedul_server_main/models"
 )
 
 func main() {
@@ -40,13 +39,15 @@ func main() {
 	}).Handler)
 
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	router.Use(jwtauth.Verifier(tokenAuth))
-
-	store := models.NewStore(db)
 	smsSender := sms.NewSender()
 
-	router.Post("/login_verify", handlers.HandleLoginVerify(store, smsSender))
-	router.Post("/login_verify_check", handlers.HandleLoginVerifyCheck(store, tokenAuth))
+	authStore := auth.NewStore(db)
+	authService := auth.NewService(authStore, tokenAuth, smsSender)
+
+	router.Use(jwtauth.Verifier(tokenAuth))
+
+	router.Post("/login_verify", HandleLoginVerify(authService))
+	router.Post("/login_verify_check", HandleLoginVerifyCheck(authService))
 
 	fmt.Println("Server listening at localhost:4000")
 

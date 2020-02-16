@@ -1,0 +1,1 @@
+DROP TABLE kedul_user;

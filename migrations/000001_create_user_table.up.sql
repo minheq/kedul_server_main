@@ -1,4 +1,4 @@
-CREATE TABLE account (
+CREATE TABLE kedul_user (
 	id                          UUID                    		NOT NULL,
 	full_name                   TEXT                    		NOT NULL,
 	phone_number                TEXT                    		NOT NULL,
@@ -7,6 +7,6 @@ CREATE TABLE account (
 	created_at									TIMESTAMP WITH TIME ZONE		NOT NULL,
 	updated_at									TIMESTAMP WITH TIME ZONE		NOT NULL,	
 
-	CONSTRAINT "PK_account_1" 	PRIMARY KEY (id),
-	CONSTRAINT "UN_account_1" 	UNIQUE (phone_number)
+	CONSTRAINT "PK_user_1" 	PRIMARY KEY (id),
+	CONSTRAINT "UN_user_1" 	UNIQUE (phone_number)
 );

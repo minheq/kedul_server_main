@@ -1,6 +1,6 @@
 CREATE TABLE verification_code (
 	id							UUID												NOT NULL,
-	account_id			UUID												NOT NULL,
+	user_id					UUID												NOT NULL,
 	code						TEXT												NOT NULL,
 	verification_id	TEXT												NOT NULL,
 	code_type				TEXT												NOT NULL,
