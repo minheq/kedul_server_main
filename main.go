@@ -12,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/sms"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -23,10 +24,19 @@ func main() {
 
 	router := chi.NewRouter()
 
-	// A good base middleware stack
+	// Setup the logger backend using sirupsen/logrus and configure
+	// it to use a custom JSONFormatter. See the logrus docs for how to
+	// configure the backend at github.com/sirupsen/logrus
+	logger := logrus.New()
+	logger.Formatter = &logrus.JSONFormatter{
+		// disable, as we set our own
+		DisableTimestamp: true,
+		PrettyPrint:      true,
+	}
+
 	router.Use(middleware.RequestID)
 	router.Use(middleware.RealIP)
-	router.Use(middleware.Logger)
+	router.Use(NewStructuredLogger(logger))
 	router.Use(middleware.Recoverer)
 
 	router.Use(cors.New(cors.Options{

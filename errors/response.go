@@ -35,6 +35,8 @@ func HTTPStatusCode(err error) int {
 			return http.StatusUnauthorized
 		case KindNotFound:
 			return http.StatusNotFound
+		case KindUnexpected:
+			return http.StatusInternalServerError
 		default:
 			return http.StatusInternalServerError
 		}
