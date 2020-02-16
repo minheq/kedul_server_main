@@ -36,7 +36,7 @@ func HandleLoginVerify(authService auth.Service) http.HandlerFunc {
 			return
 		}
 
-		state, err := authService.LoginVerify(data.PhoneNumber, data.CountryCode)
+		state, err := authService.LoginVerify(r.Context(), data.PhoneNumber, data.CountryCode)
 
 		if err != nil {
 			fmt.Println(err)
@@ -75,7 +75,7 @@ func HandleLoginVerifyCheck(authService auth.Service) http.HandlerFunc {
 			return
 		}
 
-		accessToken, err := authService.LoginVerifyCheck(data.VerificationID, data.Code)
+		accessToken, err := authService.LoginVerifyCheck(r.Context(), data.VerificationID, data.Code)
 
 		if err != nil {
 			_ = render.Render(w, r, errors.NewErrResponse(err))

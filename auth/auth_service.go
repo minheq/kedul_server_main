@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -24,7 +25,7 @@ func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender sms.Sender) S
 }
 
 // LoginVerify login verification initialization core logic
-func (as *Service) LoginVerify(phoneNumber string, countryCode string) (string, error) {
+func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryCode string) (string, error) {
 	const op = "handlers/login_verify.LoginVerify"
 
 	parsedPhoneNumber, err := phonenumbers.Parse(phoneNumber, countryCode)
@@ -35,7 +36,7 @@ func (as *Service) LoginVerify(phoneNumber string, countryCode string) (string, 
 
 	formattedPhoneNumber := phonenumbers.Format(parsedPhoneNumber, phonenumbers.NATIONAL)
 
-	user, err := as.store.GetUserByPhoneNumber(formattedPhoneNumber, countryCode)
+	user, err := as.store.GetUserByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
 
 	if err != nil && errors.Is(errors.KindNotFound, err) == false {
 		return "", errors.Unexpected(op, err)
@@ -45,14 +46,14 @@ func (as *Service) LoginVerify(phoneNumber string, countryCode string) (string, 
 	if user == nil {
 		user = NewUser(formattedPhoneNumber, countryCode)
 
-		err = as.store.StoreUser(user)
+		err = as.store.StoreUser(ctx, user)
 
 		if err != nil {
 			return "", errors.Unexpected(op, err)
 		}
 	}
 
-	err = as.store.RemoveVerificationCodeByPhoneNumber(formattedPhoneNumber, countryCode)
+	err = as.store.RemoveVerificationCodeByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
 
 	if err != nil {
 		return "", errors.Unexpected(op, err)
@@ -63,7 +64,7 @@ func (as *Service) LoginVerify(phoneNumber string, countryCode string) (string, 
 
 	newVerificationCode := NewVerificationCode(verificationID, code, user.ID, formattedPhoneNumber, countryCode, "LOGIN")
 
-	err = as.store.StoreVerificationCode(newVerificationCode)
+	err = as.store.StoreVerificationCode(ctx, newVerificationCode)
 
 	if err != nil {
 		return "", errors.Unexpected(op, err)
@@ -79,10 +80,10 @@ func (as *Service) LoginVerify(phoneNumber string, countryCode string) (string, 
 }
 
 // LoginVerifyCheck returns accessToken given the verificationID and code match the persisted verification code
-func (as *Service) LoginVerifyCheck(verificationID string, code string) (string, error) {
+func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, code string) (string, error) {
 	const op = "handlers/login_verify_check.LoginVerifyCheck"
 
-	verificationCode, err := as.store.GetVerificationCodeByIDAndCode(verificationID, code)
+	verificationCode, err := as.store.GetVerificationCodeByIDAndCode(ctx, verificationID, code)
 
 	if err != nil {
 		return "", errors.Invalid(op, "verification code not found")
@@ -92,7 +93,7 @@ func (as *Service) LoginVerifyCheck(verificationID string, code string) (string,
 		return "", errors.Invalid(op, "verification code expired")
 	}
 
-	user, err := as.store.GetUserByID(verificationCode.UserID)
+	user, err := as.store.GetUserByID(ctx, verificationCode.UserID)
 
 	if err != nil {
 		return "", errors.Invalid(op, "user not found")
@@ -101,13 +102,13 @@ func (as *Service) LoginVerifyCheck(verificationID string, code string) (string,
 	user.IsPhoneNumberVerified = true
 	user.UpdatedAt = time.Now()
 
-	err = as.store.UpdateUser(user)
+	err = as.store.UpdateUser(ctx, user)
 
 	if err != nil {
 		return "", errors.Unexpected(op, err)
 	}
 
-	err = as.store.RemoveVerificationCodeByID(verificationCode.ID)
+	err = as.store.RemoveVerificationCodeByID(ctx, verificationCode.ID)
 
 	if err != nil {
 		return "", errors.Unexpected(op, err)

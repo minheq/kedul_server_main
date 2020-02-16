@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/minheq/kedul_server_main/errors"
@@ -17,7 +18,7 @@ func NewStore(db *sql.DB) Store {
 }
 
 // GetVerificationCodeByIDAndCode gets VerificationCode by code
-func (s *Store) GetVerificationCodeByIDAndCode(verificationID string, code string) (*VerificationCode, error) {
+func (s *Store) GetVerificationCodeByIDAndCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error) {
 	const op = "auth/store.GetVerificationCodeByIDAndCode"
 
 	query := `
@@ -45,7 +46,7 @@ func (s *Store) GetVerificationCodeByIDAndCode(verificationID string, code strin
 }
 
 // StoreVerificationCode persists VerificationCode
-func (s *Store) StoreVerificationCode(vc *VerificationCode) error {
+func (s *Store) StoreVerificationCode(ctx context.Context, vc *VerificationCode) error {
 	const op = "auth/store.StoreVerificationCode"
 
 	query := `
@@ -63,7 +64,7 @@ func (s *Store) StoreVerificationCode(vc *VerificationCode) error {
 }
 
 // RemoveVerificationCodeByPhoneNumber removes VerificationCode
-func (s *Store) RemoveVerificationCodeByPhoneNumber(phoneNumber string, countryCode string) error {
+func (s *Store) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
 	const op = "auth/store.RemoveVerificationCodeByPhoneNumber"
 
 	query := `
@@ -81,7 +82,7 @@ func (s *Store) RemoveVerificationCodeByPhoneNumber(phoneNumber string, countryC
 }
 
 // RemoveVerificationCodeByID removes VerificationCode by Id
-func (s *Store) RemoveVerificationCodeByID(id string) error {
+func (s *Store) RemoveVerificationCodeByID(ctx context.Context, id string) error {
 	const op = "auth/store.RemoveVerificationCodeByID"
 
 	query := `
@@ -99,7 +100,7 @@ func (s *Store) RemoveVerificationCodeByID(id string) error {
 }
 
 // GetUserByID gets User by ID
-func (s *Store) GetUserByID(id string) (*User, error) {
+func (s *Store) GetUserByID(ctx context.Context, id string) (*User, error) {
 	const op = "auth/store.GetUserByPhoneNumber"
 
 	query := `
@@ -126,7 +127,7 @@ func (s *Store) GetUserByID(id string) (*User, error) {
 }
 
 // GetUserByPhoneNumber gets User by Phone Number
-func (s *Store) GetUserByPhoneNumber(phoneNumber string, countryCode string) (*User, error) {
+func (s *Store) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
 	const op = "auth/store.GetUserByPhoneNumber"
 
 	query := `
@@ -154,7 +155,7 @@ func (s *Store) GetUserByPhoneNumber(phoneNumber string, countryCode string) (*U
 }
 
 // StoreUser persists User
-func (s *Store) StoreUser(user *User) error {
+func (s *Store) StoreUser(ctx context.Context, user *User) error {
 	const op = "auth/store.StoreUser"
 
 	query := `
@@ -172,7 +173,7 @@ func (s *Store) StoreUser(user *User) error {
 }
 
 // UpdateUser updates User including all fields
-func (s *Store) UpdateUser(user *User) error {
+func (s *Store) UpdateUser(ctx context.Context, user *User) error {
 	const op = "auth/store.UpdateUser"
 
 	query := `
