@@ -1,4 +1,4 @@
-package models
+package auth
 
 import (
 	"time"
@@ -6,8 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// Account ...
-type Account struct {
+// User ...
+type User struct {
 	ID                    string    `db:"id"`
 	FullName              string    `db:"full_name"`
 	PhoneNumber           string    `db:"phone_number"`
@@ -17,12 +17,12 @@ type Account struct {
 	UpdatedAt             time.Time `db:"updated_at"`
 }
 
-// NewAccount constructor for Account
-func NewAccount(phoneNumber string, countryCode string) *Account {
+// NewUser constructor for User
+func NewUser(phoneNumber string, countryCode string) *User {
 	now := time.Now()
 	id := uuid.Must(uuid.New(), nil).String()
 
-	newAccount := Account{
+	newUser := User{
 		ID:                    id,
 		PhoneNumber:           phoneNumber,
 		CountryCode:           countryCode,
@@ -31,5 +31,5 @@ func NewAccount(phoneNumber string, countryCode string) *Account {
 		UpdatedAt:             now,
 	}
 
-	return &newAccount
+	return &newUser
 }

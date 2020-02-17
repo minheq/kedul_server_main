@@ -1,4 +1,4 @@
-package models
+package auth
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 // VerificationCode ...
 type VerificationCode struct {
 	ID             string    `db:"id"`
-	AccountID      string    `db:"account_id"`
+	UserID         string    `db:"user_id"`
 	Code           string    `db:"code"`
 	VerificationID string    `db:"verification_id"`
 	CodeType       string    `db:"code_type"`
@@ -20,13 +20,13 @@ type VerificationCode struct {
 }
 
 // NewVerificationCode constructor for VerificationCode
-func NewVerificationCode(verificationID string, code string, accountID string, phoneNumber string, countryCode string, codeType string) *VerificationCode {
+func NewVerificationCode(verificationID string, code string, userID string, phoneNumber string, countryCode string, codeType string) *VerificationCode {
 	now := time.Now()
 	id := uuid.Must(uuid.New(), nil).String()
 
 	verificationCode := VerificationCode{
 		ID:             id,
-		AccountID:      accountID,
+		UserID:         userID,
 		Code:           code,
 		CodeType:       codeType,
 		VerificationID: verificationID,

@@ -4,33 +4,38 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth"
 	_ "github.com/lib/pq"
-	"github.com/minheq/kedul_server_main/handlers"
+	"github.com/minheq/kedul_server_main/auth"
+	"github.com/minheq/kedul_server_main/logger"
 	"github.com/minheq/kedul_server_main/sms"
-	"github.com/minheq/kedul_server_main/models"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	db, err := sql.Open("postgres", "postgres://postgres@127.0.0.1:5432/kedul?sslmode=disable")
+	r := chi.NewRouter()
+	l := logger.NewLogger()
+	dbURL := os.Getenv("DATABASE_URL")
+	db, err := sql.Open("postgres", dbURL)
 
 	if err != nil {
-		panic(err)
+		l.WithFields(logrus.Fields{
+			"DATABASE_URL": dbURL,
+			"error":        err.Error(),
+		}).Fatal("error opening database")
 	}
 
-	router := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(logger.NewRequestLogger(l))
+	r.Use(middleware.Recoverer)
 
-	// A good base middleware stack
-	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
-
-	router.Use(cors.New(cors.Options{
+	r.Use(cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Workspace", "X-CSRF-Token"},
@@ -40,15 +45,17 @@ func main() {
 	}).Handler)
 
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	router.Use(jwtauth.Verifier(tokenAuth))
-
-	store := models.NewStore(db)
 	smsSender := sms.NewSender()
 
-	router.Post("/login_verify", handlers.HandleLoginVerify(store, smsSender))
-	router.Post("/login_verify_check", handlers.HandleLoginVerifyCheck(store, tokenAuth))
+	authStore := auth.NewStore(db)
+	authService := auth.NewService(authStore, tokenAuth, smsSender, l)
+
+	r.Use(jwtauth.Verifier(tokenAuth))
+
+	r.Post("/login_verify", HandleLoginVerify(authService))
+	r.Post("/login_verify_check", HandleLoginVerifyCheck(authService))
 
 	fmt.Println("Server listening at localhost:4000")
 
-	http.ListenAndServe(":4000", router)
+	http.ListenAndServe(":4000", r)
 }
