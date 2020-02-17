@@ -50,10 +50,12 @@ func TestLoginHappyPath(t *testing.T) {
 
 		if err != nil {
 			t.Error(err)
+			return
 		}
 
 		if code == "" {
 			t.Error("missing code")
+			return
 		}
 	})
 
@@ -62,6 +64,7 @@ func TestLoginHappyPath(t *testing.T) {
 
 		if err != nil {
 			t.Error(err)
+			return
 		}
 
 		if accessToken == "" {
@@ -123,6 +126,7 @@ func TestLoginVerifyTwice(t *testing.T) {
 
 		if err != nil {
 			t.Error(err)
+			return
 		}
 
 		if codeOne == "" {
@@ -137,10 +141,12 @@ func TestLoginVerifyTwice(t *testing.T) {
 
 		if err != nil {
 			t.Error(err)
+			return
 		}
 
 		if codeOne == codeTwo {
 			t.Error("same code")
+			return
 		}
 
 		if verificationIDOne == verificationIDTwo {

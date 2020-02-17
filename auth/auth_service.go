@@ -27,11 +27,59 @@ func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender sms.Sender, l
 	return Service{store: store, tokenAuth: tokenAuth, smsSender: smsSender, logger: logger}
 }
 
+func (as *Service) formatPhoneNumber(phoneNumber string, countryCode string) (string, error) {
+	const op = "auth/auth_service.formatPhoneNumber"
+	parsedPhoneNumber, err := phonenumbers.Parse(phoneNumber, countryCode)
+
+	if err != nil {
+		return "", err
+	}
+
+	formattedPhoneNumber := phonenumbers.Format(parsedPhoneNumber, phonenumbers.NATIONAL)
+
+	return formattedPhoneNumber, nil
+}
+
+func (as *Service) getUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
+	const op = "auth/auth_service.getUserByPhoneNumber"
+
+	user, err := as.store.GetUserByPhoneNumber(ctx, phoneNumber, countryCode)
+
+	if err != nil && errors.Is(errors.KindNotFound, err) == false {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (as *Service) createNewVerificationCode(ctx context.Context, user *User, phoneNumber string, countryCode string, verificationCodeType string) (*VerificationCode, error) {
+	const op = "auth/auth_service.createNewVerificationCode"
+
+	err := as.store.RemoveVerificationCodeByPhoneNumber(ctx, phoneNumber, countryCode)
+
+	if err != nil {
+		return nil, err
+	}
+
+	verificationID := random.String(50)
+	code := random.Number(6)
+
+	verificationCode := NewVerificationCode(verificationID, code, user.ID, phoneNumber, countryCode, verificationCodeType)
+
+	err = as.store.StoreVerificationCode(ctx, verificationCode)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return verificationCode, nil
+}
+
 // LoginVerify login verification initialization core logic
 func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryCode string) (string, error) {
 	const op = "auth/auth_service.LoginVerify"
 
-	parsedPhoneNumber, err := phonenumbers.Parse(phoneNumber, countryCode)
+	formattedPhoneNumber, err := as.formatPhoneNumber(phoneNumber, countryCode)
 
 	if err != nil {
 		err = errors.Invalid(op, "phone number supplied is invalid")
@@ -39,11 +87,9 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 		return "", err
 	}
 
-	formattedPhoneNumber := phonenumbers.Format(parsedPhoneNumber, phonenumbers.NATIONAL)
+	user, err := as.getUserByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
 
-	user, err := as.store.GetUserByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
-
-	if err != nil && errors.Is(errors.KindNotFound, err) == false {
+	if err != nil {
 		err = errors.Unexpected(op, err)
 		as.logger.Error(err)
 		return "", err
@@ -62,7 +108,7 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 		}
 	}
 
-	err = as.store.RemoveVerificationCodeByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
+	verificationCode, err := as.createNewVerificationCode(ctx, user, formattedPhoneNumber, countryCode, "LOGIN")
 
 	if err != nil {
 		err = errors.Unexpected(op, err)
@@ -70,12 +116,7 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 		return "", err
 	}
 
-	verificationID := random.String(50)
-	code := random.Number(6)
-
-	newVerificationCode := NewVerificationCode(verificationID, code, user.ID, formattedPhoneNumber, countryCode, "LOGIN")
-
-	err = as.store.StoreVerificationCode(ctx, newVerificationCode)
+	err = as.smsSender.SendSMS(formattedPhoneNumber, verificationCode.CountryCode, verificationCode.Code)
 
 	if err != nil {
 		err = errors.Unexpected(op, err)
@@ -83,17 +124,7 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 		return "", err
 	}
 
-	err = as.smsSender.SendSMS(formattedPhoneNumber, countryCode, code)
-
-	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
-	}
-
-	as.logger.Infof("%s complete", op)
-
-	return verificationID, nil
+	return verificationCode.VerificationID, nil
 }
 
 // LoginVerifyCheck returns accessToken given the verificationID and code match the persisted verification code
@@ -154,8 +185,6 @@ func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, 
 		as.logger.Error(err)
 		return "", err
 	}
-
-	as.logger.Infof("%s complete", op)
 
 	return accessToken, nil
 }

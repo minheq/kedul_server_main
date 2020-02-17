@@ -36,14 +36,14 @@ func HandleLoginVerify(authService auth.Service) http.HandlerFunc {
 			return
 		}
 
-		state, err := authService.LoginVerify(r.Context(), data.PhoneNumber, data.CountryCode)
+		verificationID, err := authService.LoginVerify(r.Context(), data.PhoneNumber, data.CountryCode)
 
 		if err != nil {
 			_ = render.Render(w, r, errors.NewErrResponse(err))
 			return
 		}
 
-		render.Render(w, r, &loginVerifyResponse{VerificationID: state})
+		render.Render(w, r, &loginVerifyResponse{VerificationID: verificationID})
 	}
 }
 
@@ -85,7 +85,7 @@ func HandleLoginVerifyCheck(authService auth.Service) http.HandlerFunc {
 	}
 }
 
-type getCurrentUserResponse struct {
+type userResponse struct {
 	ID                    string    `json:"id"`
 	FullName              string    `json:"full_name"`
 	PhoneNumber           string    `json:"phone_number"`
@@ -95,7 +95,19 @@ type getCurrentUserResponse struct {
 	UpdatedAt             time.Time `json:"updated_at"`
 }
 
-func (rd *getCurrentUserResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func newUserResponse(user *auth.User) *userResponse {
+	return &userResponse{
+		ID:                    user.ID,
+		FullName:              user.FullName,
+		PhoneNumber:           user.PhoneNumber,
+		CountryCode:           user.CountryCode,
+		IsPhoneNumberVerified: user.IsPhoneNumberVerified,
+		CreatedAt:             user.CreatedAt,
+		UpdatedAt:             user.UpdatedAt,
+	}
+}
+
+func (rd *userResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
@@ -109,14 +121,6 @@ func HandleGetCurrentUser(authService auth.Service) http.HandlerFunc {
 			return
 		}
 
-		render.Render(w, r, &getCurrentUserResponse{
-			ID:                    user.ID,
-			FullName:              user.FullName,
-			PhoneNumber:           user.PhoneNumber,
-			CountryCode:           user.CountryCode,
-			IsPhoneNumberVerified: user.IsPhoneNumberVerified,
-			CreatedAt:             user.CreatedAt,
-			UpdatedAt:             user.UpdatedAt,
-		})
+		render.Render(w, r, newUserResponse(user))
 	}
 }
