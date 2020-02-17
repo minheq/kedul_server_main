@@ -20,11 +20,12 @@ import (
 func main() {
 	r := chi.NewRouter()
 	l := logger.NewLogger()
-	db, err := sql.Open("postgres", "postgres://postgres@127.0.0.1:5432/kedul?sslmode=disable")
+	dbURL := os.Getenv("DATABASE_URL")
+	db, err := sql.Open("postgres", dbURL)
 
 	if err != nil {
 		l.WithFields(logrus.Fields{
-			"DATABASE_URL": os.Getenv("DATABASE_URL"),
+			"DATABASE_URL": dbURL,
 			"error":        err.Error(),
 		}).Fatal("error opening database")
 	}
@@ -47,11 +48,11 @@ func main() {
 	smsSender := sms.NewSender()
 
 	authStore := auth.NewStore(db)
-	authService := auth.NewService(authStore, tokenAuth, smsSender)
+	authService := auth.NewService(authStore, tokenAuth, smsSender, l)
 
 	r.Use(jwtauth.Verifier(tokenAuth))
 
-	r.Post("/login_verify", HandleLoginVerify(authService, l))
+	r.Post("/login_verify", HandleLoginVerify(authService))
 	r.Post("/login_verify_check", HandleLoginVerifyCheck(authService))
 
 	fmt.Println("Server listening at localhost:4000")
