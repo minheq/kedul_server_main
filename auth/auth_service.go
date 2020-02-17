@@ -75,6 +75,36 @@ func (as *Service) createNewVerificationCode(ctx context.Context, user *User, ph
 	return verificationCode, nil
 }
 
+func (as *Service) consumeVerificationCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error) {
+	const op = "auth/auth_service.consumeVerificationCode"
+
+	verificationCode, err := as.store.GetVerificationCodeByIDAndCode(ctx, verificationID, code)
+
+	if err != nil && errors.Is(errors.KindNotFound, err) == false {
+		err = errors.Unexpected(op, err)
+		return nil, err
+	}
+
+	if err != nil {
+		err = errors.Invalid(op, "verification code invalid")
+		return nil, err
+	}
+
+	if verificationCode.ExpiredAt.Before(time.Now()) {
+		err = errors.Invalid(op, "verification code expired")
+		return nil, err
+	}
+
+	err = as.store.RemoveVerificationCodeByID(ctx, verificationCode.ID)
+
+	if err != nil {
+		err = errors.Unexpected(op, err)
+		return nil, err
+	}
+
+	return verificationCode, nil
+}
+
 // LoginVerify login verification initialization core logic
 func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryCode string) (string, error) {
 	const op = "auth/auth_service.LoginVerify"
@@ -131,23 +161,10 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, code string) (string, error) {
 	const op = "auth/auth_service.LoginVerifyCheck"
 
-	verificationCode, err := as.store.GetVerificationCodeByIDAndCode(ctx, verificationID, code)
-
-	if err != nil && errors.Is(errors.KindNotFound, err) == false {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
-	}
+	verificationCode, err := as.consumeVerificationCode(ctx, verificationID, code)
 
 	if err != nil {
-		err = errors.Invalid(op, "verification code invalid")
-		as.logger.Info(err)
-		return "", err
-	}
-
-	if verificationCode.ExpiredAt.Before(time.Now()) {
-		err = errors.Invalid(op, "verification code expired")
-		as.logger.Info(err)
+		as.logger.Error(err)
 		return "", err
 	}
 
@@ -163,14 +180,6 @@ func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, 
 	user.UpdatedAt = time.Now()
 
 	err = as.store.UpdateUser(ctx, user)
-
-	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
-	}
-
-	err = as.store.RemoveVerificationCodeByID(ctx, verificationCode.ID)
 
 	if err != nil {
 		err = errors.Unexpected(op, err)
