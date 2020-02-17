@@ -1,4 +1,4 @@
-package main
+package logger
 
 import (
 	"fmt"
@@ -6,27 +6,26 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/middleware"
-	"github.com/sirupsen/logrus"
 )
 
-// StructuredLogger is a simple, but powerful implementation of a custom structured
+// RequestLogger is a simple, but powerful implementation of a custom Request
 // logger backed on logrus. I encourage users to copy it, adapt it and make it their
 // own. Also take a look at https://github.com/pressly/lg for a dedicated pkg based
 // on this work, designed for context-based http routers.
 
-func NewStructuredLogger(logger *logrus.Logger) func(next http.Handler) http.Handler {
-	return middleware.RequestLogger(&StructuredLogger{logger})
+func NewRequestLogger(logger *Logger) func(next http.Handler) http.Handler {
+	return middleware.RequestLogger(&RequestLogger{logger})
 }
 
-type StructuredLogger struct {
-	Logger *logrus.Logger
+type RequestLogger struct {
+	Logger *Logger
 }
 
-func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
-	entry := &StructuredLoggerEntry{Logger: logrus.NewEntry(l.Logger)}
-	logFields := logrus.Fields{}
+func (l *RequestLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
+	entry := &RequestLoggerEntry{Logger: l.Logger.entry}
+	logFields := Fields{}
 
-	logFields["ts"] = time.Now().UTC().Format(time.RFC1123)
+	logFields["ts"] = time.Now().UTC().Format(time.RFC3339)
 
 	if reqID := middleware.GetReqID(r.Context()); reqID != "" {
 		logFields["req_id"] = reqID
@@ -36,8 +35,6 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 	if r.TLS != nil {
 		scheme = "https"
 	}
-	logFields["http_scheme"] = scheme
-	logFields["http_proto"] = r.Proto
 	logFields["http_method"] = r.Method
 
 	logFields["remote_addr"] = r.RemoteAddr
@@ -52,21 +49,20 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 	return entry
 }
 
-type StructuredLoggerEntry struct {
-	Logger logrus.FieldLogger
+type RequestLoggerEntry struct {
+	Logger FieldLogger
 }
 
-func (l *StructuredLoggerEntry) Write(status, bytes int, elapsed time.Duration) {
-	l.Logger = l.Logger.WithFields(logrus.Fields{
-		"resp_status": status, "resp_bytes_length": bytes,
+func (l *RequestLoggerEntry) Write(status, bytes int, elapsed time.Duration) {
+	l.Logger = l.Logger.WithFields(Fields{
 		"resp_elapsed_ms": float64(elapsed.Nanoseconds()) / 1000000.0,
 	})
 
 	l.Logger.Infoln("request complete")
 }
 
-func (l *StructuredLoggerEntry) Panic(v interface{}, stack []byte) {
-	l.Logger = l.Logger.WithFields(logrus.Fields{
+func (l *RequestLoggerEntry) Panic(v interface{}, stack []byte) {
+	l.Logger = l.Logger.WithFields(Fields{
 		"stack": string(stack),
 		"panic": fmt.Sprintf("%+v", v),
 	})
@@ -79,19 +75,19 @@ func (l *StructuredLoggerEntry) Panic(v interface{}, stack []byte) {
 // passes through the handler chain, which at any point can be logged
 // with a call to .Print(), .Info(), etc.
 
-func GetLogEntry(r *http.Request) logrus.FieldLogger {
-	entry := middleware.GetLogEntry(r).(*StructuredLoggerEntry)
+func GetLogEntry(r *http.Request) FieldLogger {
+	entry := middleware.GetLogEntry(r).(*RequestLoggerEntry)
 	return entry.Logger
 }
 
 func LogEntrySetField(r *http.Request, key string, value interface{}) {
-	if entry, ok := r.Context().Value(middleware.LogEntryCtxKey).(*StructuredLoggerEntry); ok {
+	if entry, ok := r.Context().Value(middleware.LogEntryCtxKey).(*RequestLoggerEntry); ok {
 		entry.Logger = entry.Logger.WithField(key, value)
 	}
 }
 
 func LogEntrySetFields(r *http.Request, fields map[string]interface{}) {
-	if entry, ok := r.Context().Value(middleware.LogEntryCtxKey).(*StructuredLoggerEntry); ok {
+	if entry, ok := r.Context().Value(middleware.LogEntryCtxKey).(*RequestLoggerEntry); ok {
 		entry.Logger = entry.Logger.WithFields(fields)
 	}
 }

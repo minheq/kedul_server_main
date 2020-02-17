@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/render"
 	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/errors"
+	"github.com/minheq/kedul_server_main/logger"
 )
 
 type loginVerifyRequest struct {
@@ -27,7 +27,7 @@ func (rd *loginVerifyResponse) Render(w http.ResponseWriter, r *http.Request) er
 }
 
 // HandleLoginVerify handles login verification initialization
-func HandleLoginVerify(authService auth.Service) http.HandlerFunc {
+func HandleLoginVerify(authService auth.Service, logger *logger.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := &loginVerifyRequest{}
 
@@ -39,7 +39,7 @@ func HandleLoginVerify(authService auth.Service) http.HandlerFunc {
 		state, err := authService.LoginVerify(r.Context(), data.PhoneNumber, data.CountryCode)
 
 		if err != nil {
-			fmt.Println(err)
+			logger.Error(err)
 			_ = render.Render(w, r, errors.NewErrResponse(err))
 			return
 		}

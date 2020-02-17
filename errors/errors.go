@@ -80,7 +80,7 @@ func (e *Error) Error() string {
 	}
 
 	if e.Kind != 0 {
-		fmt.Fprintf(&b, "<%s> ", e.Kind)
+		fmt.Fprintf(&b, "%s: ", e.Kind)
 	}
 
 	b.WriteString(e.Message)
@@ -99,6 +99,7 @@ func ErrorMessage(err error) string {
 	} else if ok && e.Err != nil {
 		return ErrorMessage(e.Err)
 	}
+
 	return "An internal error has occurred. Please contact technical support."
 }
 
