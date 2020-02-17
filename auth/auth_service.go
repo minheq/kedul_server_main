@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -157,4 +158,27 @@ func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, 
 	as.logger.Infof("%s complete", op)
 
 	return accessToken, nil
+}
+
+// GetCurrentUser ...
+func (as *Service) GetCurrentUser(ctx context.Context) (*User, error) {
+	const op = "auth/auth_service.GetCurrentUser"
+	_, claims, err := jwtauth.FromContext(ctx)
+
+	if err != nil {
+		err = errors.Invalid(op, "missing or invalid access token")
+		as.logger.Info(err)
+		return nil, err
+	}
+
+	userID := fmt.Sprintf("%v", claims["user_id"])
+	user, err := as.store.GetUserByID(ctx, userID)
+
+	if err != nil {
+		err = errors.Unexpected(op, err)
+		as.logger.Error(err)
+		return nil, err
+	}
+
+	return user, nil
 }

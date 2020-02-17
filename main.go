@@ -54,6 +54,7 @@ func main() {
 
 	r.Post("/login_verify", HandleLoginVerify(authService))
 	r.Post("/login_verify_check", HandleLoginVerifyCheck(authService))
+	r.Get("/current_user", HandleGetCurrentUser(authService))
 
 	fmt.Println("Server listening at localhost:4000")
 
