@@ -62,7 +62,7 @@ func (rd *loginVerifyCheckResponse) Render(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-func (s *server) handleLoginVerifyCheck(authService auth.Service) http.HandlerFunc {
+func (s *server) handleLoginCheck(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := &loginVerifyCheckRequest{}
 
@@ -71,7 +71,7 @@ func (s *server) handleLoginVerifyCheck(authService auth.Service) http.HandlerFu
 			return
 		}
 
-		accessToken, err := authService.LoginVerifyCheck(r.Context(), data.VerificationID, data.Code)
+		accessToken, err := authService.LoginCheck(r.Context(), data.VerificationID, data.Code)
 
 		if err != nil {
 			s.respondError(w, r, err)

@@ -24,18 +24,6 @@ func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender phone.SMSSend
 	return Service{store: store, tokenAuth: tokenAuth, smsSender: smsSender}
 }
 
-func (as *Service) getUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
-	const op = "auth/auth_service.getUserByPhoneNumber"
-
-	user, err := as.store.GetUserByPhoneNumber(ctx, phoneNumber, countryCode)
-
-	if err != nil && errors.Is(errors.KindNotFound, err) == false {
-		return nil, err
-	}
-
-	return user, nil
-}
-
 func (as *Service) createNewVerificationCode(ctx context.Context, user *User, phoneNumber string, countryCode string, verificationCodeType string) (*VerificationCode, error) {
 	const op = "auth/auth_service.createNewVerificationCode"
 
@@ -95,9 +83,9 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 		return "", errors.Invalid(op, err, "invalid phone number")
 	}
 
-	user, err := as.getUserByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
+	user, err := as.store.GetUserByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
 
-	if err != nil {
+	if err != nil && errors.Is(errors.KindNotFound, err) == false {
 		return "", errors.Unexpected(op, err, "failed to get user by phone number")
 	}
 
@@ -127,9 +115,9 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 	return verificationCode.VerificationID, nil
 }
 
-// LoginVerifyCheck returns accessToken given the verificationID and code match the persisted verification code
-func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, code string) (string, error) {
-	const op = "auth/auth_service.LoginVerifyCheck"
+// LoginCheck returns accessToken given the verificationID and code match the persisted verification code
+func (as *Service) LoginCheck(ctx context.Context, verificationID string, code string) (string, error) {
+	const op = "auth/auth_service.LoginCheck"
 
 	verificationCode, err := as.consumeVerificationCode(ctx, verificationID, code)
 
@@ -175,6 +163,97 @@ func (as *Service) GetCurrentUser(ctx context.Context) (*User, error) {
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to get user by id")
+	}
+
+	return user, nil
+}
+
+// UpdatePhoneNumberVerify ...
+func (as *Service) UpdatePhoneNumberVerify(ctx context.Context, phoneNumber string, countryCode string, currentUser *User) (string, error) {
+	const op = "auth/auth_service.UpdatePhoneNumberVerify"
+
+	formattedPhoneNumber, err := phone.FormatPhoneNumber(phoneNumber, countryCode)
+
+	if err != nil {
+		return "", errors.Wrap(op, err, "invalid phone number")
+	}
+
+	user, err := as.store.GetUserByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
+
+	if err != nil && errors.Is(errors.KindNotFound, err) == false {
+		return "", errors.Unexpected(op, err, "failed to get user by phone number")
+	}
+
+	if user != nil {
+		return "", errors.Invalid(op, err, "user with given phone number already exists")
+	}
+
+	verificationCode, err := as.createNewVerificationCode(ctx, currentUser, formattedPhoneNumber, countryCode, "UPDATE")
+
+	if err != nil {
+		return "", errors.Unexpected(op, err, "failed to create new verification code")
+	}
+
+	err = as.smsSender.SendSMS(formattedPhoneNumber, verificationCode.CountryCode, verificationCode.Code)
+
+	if err != nil {
+		return "", errors.Unexpected(op, err, "failed to send sms")
+	}
+
+	return verificationCode.VerificationID, nil
+}
+
+// UpdatePhoneNumberCheck ...
+func (as *Service) UpdatePhoneNumberCheck(ctx context.Context, verificationID string, code string, currentUser *User) (*User, error) {
+	const op = "auth/auth_service.UpdatePhoneNumberCheck"
+
+	verificationCode, err := as.consumeVerificationCode(ctx, verificationID, code)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to consume verification code")
+	}
+
+	user, err := as.store.GetUserByID(ctx, verificationCode.UserID)
+
+	if err != nil {
+		return nil, errors.Unexpected(op, err, "failed to get user by id")
+	}
+
+	if currentUser.ID != user.ID {
+		return nil, errors.Unauthorized(op)
+	}
+
+	user.UpdatedAt = time.Now()
+	user.PhoneNumber = verificationCode.PhoneNumber
+	user.CountryCode = verificationCode.CountryCode
+
+	err = as.store.UpdateUser(ctx, user)
+
+	if err != nil {
+		return nil, errors.Unexpected(op, err, "failed to update user")
+	}
+
+	return user, nil
+}
+
+// UpdateUserProfile ...
+func (as *Service) UpdateUserProfile(ctx context.Context, fullName string, profileImageID string, currentUser *User) (*User, error) {
+	const op = "auth/auth_service.UpdatePhoneNumberCheck"
+
+	user, err := as.store.GetUserByID(ctx, currentUser.ID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get user by id")
+	}
+
+	user.UpdatedAt = time.Now()
+	user.FullName = fullName
+	user.ProfileImageID = profileImageID
+
+	err = as.store.UpdateUser(ctx, user)
+
+	if err != nil {
+		return nil, errors.Unexpected(op, err, "failed to update user")
 	}
 
 	return user, nil

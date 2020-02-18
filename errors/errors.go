@@ -58,7 +58,7 @@ func Unauthorized(op string) *Error {
 
 // NotFound returns Error with KindNotFound
 func NotFound(op string) *Error {
-	return &Error{Kind: KindNotFound, Op: op}
+	return &Error{Kind: KindNotFound, Op: op, Message: "not found"}
 }
 
 // Unexpected returns Error with KindUnexpected

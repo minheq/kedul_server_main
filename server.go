@@ -63,7 +63,7 @@ func (s *server) routes() {
 
 	// handlers
 	s.router.Post("/login_verify", s.handleLoginVerify(authService))
-	s.router.Post("/login_verify_check", s.handleLoginVerifyCheck(authService))
+	s.router.Post("/login_check", s.handleLoginCheck(authService))
 	s.router.Get("/current_user", s.handleGetCurrentUser(authService))
 }
 
