@@ -8,26 +8,26 @@ import (
 	"github.com/minheq/kedul_server_main/auth"
 )
 
-type loginVerifyRequest struct {
+type phoneNumberVerifyRequest struct {
 	PhoneNumber string `json:"phone_number"`
 	CountryCode string `json:"country_code"`
 }
 
-func (p *loginVerifyRequest) Bind(r *http.Request) error {
+func (p *phoneNumberVerifyRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type loginVerifyResponse struct {
+type phoneNumberVerifyResponse struct {
 	VerificationID string `json:"verification_id"`
 }
 
-func (rd *loginVerifyResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (rd *phoneNumberVerifyResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
 func (s *server) handleLoginVerify(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data := &loginVerifyRequest{}
+		data := &phoneNumberVerifyRequest{}
 
 		if err := render.Bind(r, data); err != nil {
 			s.respondError(w, r, err)
@@ -41,16 +41,16 @@ func (s *server) handleLoginVerify(authService auth.Service) http.HandlerFunc {
 			return
 		}
 
-		render.Render(w, r, &loginVerifyResponse{VerificationID: verificationID})
+		render.Render(w, r, &phoneNumberVerifyResponse{VerificationID: verificationID})
 	}
 }
 
-type loginVerifyCheckRequest struct {
+type phoneNumberCheckRequest struct {
 	VerificationID string `json:"verification_id"`
 	Code           string `json:"code"`
 }
 
-func (p *loginVerifyCheckRequest) Bind(r *http.Request) error {
+func (p *phoneNumberCheckRequest) Bind(r *http.Request) error {
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (rd *loginVerifyCheckResponse) Render(w http.ResponseWriter, r *http.Reques
 
 func (s *server) handleLoginCheck(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data := &loginVerifyCheckRequest{}
+		data := &phoneNumberCheckRequest{}
 
 		if err := render.Bind(r, data); err != nil {
 			s.respondError(w, r, err)
@@ -110,7 +110,74 @@ func (rd *userResponse) Render(w http.ResponseWriter, r *http.Request) error {
 
 func (s *server) handleGetCurrentUser(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, err := authService.GetCurrentUser(r.Context())
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+
+		render.Render(w, r, newUserResponse(currentUser))
+	}
+}
+
+type updateUserProfileRequest struct {
+	FullName       string `json:"full_name"`
+	ProfileImageID string `json:"image_id"`
+}
+
+func (p *updateUserProfileRequest) Bind(r *http.Request) error {
+	return nil
+}
+
+func (s *server) handleUpdateUserProfile(authService auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+		data := &updateUserProfileRequest{}
+
+		if err := render.Bind(r, data); err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		user, err := authService.UpdateUserProfile(r.Context(), data.FullName, data.ProfileImageID, currentUser)
+
+		if err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		render.Render(w, r, newUserResponse(user))
+	}
+}
+
+func (s *server) handleUpdatePhoneNumberVerify(authService auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+		data := &phoneNumberVerifyRequest{}
+
+		if err := render.Bind(r, data); err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		verificationID, err := authService.UpdatePhoneNumberVerify(r.Context(), data.PhoneNumber, data.CountryCode, currentUser)
+
+		if err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		render.Render(w, r, &phoneNumberVerifyResponse{VerificationID: verificationID})
+	}
+}
+
+func (s *server) handleUpdatePhoneNumberCheck(authService auth.Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+		data := &phoneNumberCheckRequest{}
+
+		if err := render.Bind(r, data); err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		user, err := authService.UpdatePhoneNumberCheck(r.Context(), data.VerificationID, data.Code, currentUser)
 
 		if err != nil {
 			s.respondError(w, r, err)

@@ -90,14 +90,14 @@ func (e *Error) Error() string {
 	var b bytes.Buffer
 
 	if e.Op != "" {
-		fmt.Fprintf(&b, "\n%s: %s", e.Op, e.Message)
+		fmt.Fprintf(&b, "%s, %s: ", e.Op, e.Message)
 	}
 
 	if e.Err != nil {
 		_, ok := e.Err.(*Error)
 
 		if !ok {
-			fmt.Fprintf(&b, "\n%s", e.Err.Error())
+			fmt.Fprintf(&b, "%s: ", e.Err.Error())
 			return b.String()
 		}
 		b.WriteString(e.Err.Error())
@@ -106,7 +106,7 @@ func (e *Error) Error() string {
 	}
 
 	if e.Kind != 0 {
-		fmt.Fprintf(&b, "\nkind: [%s]", e.Kind)
+		fmt.Fprintf(&b, "kind: [%s]", e.Kind)
 	}
 
 	return b.String()

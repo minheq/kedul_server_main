@@ -57,14 +57,26 @@ func (s *server) routes() {
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Workspace", "X-CSRF-Token"},
 		ExposedHeaders:   []string{""},
 		AllowCredentials: true,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
+		MaxAge:           300,
 	}).Handler)
-	s.router.Use(jwtauth.Verifier(tokenAuth))
 
-	// handlers
-	s.router.Post("/login_verify", s.handleLoginVerify(authService))
-	s.router.Post("/login_check", s.handleLoginCheck(authService))
-	s.router.Get("/current_user", s.handleGetCurrentUser(authService))
+	// public handlers
+	s.router.Group(func(r chi.Router) {
+		s.router.Post("/auth/login_verify", s.handleLoginVerify(authService))
+		s.router.Post("/auth/login_check", s.handleLoginCheck(authService))
+	})
+
+	// protected handlers
+	s.router.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verifier(tokenAuth))
+		r.Use(jwtauth.Authenticator)
+		r.Use(addCurrentUserContext(authService))
+
+		r.Get("/auth/current_user", s.handleGetCurrentUser(authService))
+		r.Post("/auth/update_phone_number_verify", s.handleUpdatePhoneNumberVerify(authService))
+		r.Post("/auth/update_phone_number_check", s.handleUpdatePhoneNumberCheck(authService))
+		r.Post("/auth/update_user_profile", s.handleUpdateUserProfile(authService))
+	})
 }
 
 func (s *server) respondError(w http.ResponseWriter, r *http.Request, err error) {

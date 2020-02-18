@@ -55,6 +55,7 @@ type RequestLoggerEntry struct {
 
 func (l *RequestLoggerEntry) Write(status, bytes int, elapsed time.Duration) {
 	l.Logger = l.Logger.WithFields(Fields{
+		"status":          status,
 		"resp_elapsed_ms": float64(elapsed.Nanoseconds()) / 1000000.0,
 	})
 
