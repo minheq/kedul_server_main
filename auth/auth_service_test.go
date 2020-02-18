@@ -197,3 +197,34 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 		}
 	})
 }
+
+func TestUpdateUserProfileHappyPath(t *testing.T) {
+	phoneNumber, err := phone.FormatPhoneNumber("999111337", "VN")
+
+	currentUser := NewUser(phoneNumber, "VN")
+	err = store.StoreUser(context.Background(), currentUser)
+	newFullName := "new_name"
+	newProfileImageID := "new_profile_image_id"
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Run("should update user", func(t *testing.T) {
+		user, err := authService.UpdateUserProfile(context.Background(), newFullName, newProfileImageID, currentUser)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if user.FullName != newFullName {
+			t.Error("user failed to update full name")
+		}
+
+		if user.ProfileImageID != newProfileImageID {
+			t.Error("user failed to update profile image id")
+		}
+	})
+}
