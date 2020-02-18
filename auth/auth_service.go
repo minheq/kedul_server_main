@@ -8,7 +8,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/jwtauth"
 	"github.com/minheq/kedul_server_main/errors"
-	"github.com/minheq/kedul_server_main/logger"
 	"github.com/minheq/kedul_server_main/phone"
 	"github.com/minheq/kedul_server_main/random"
 )
@@ -18,12 +17,11 @@ type Service struct {
 	store     Store
 	tokenAuth *jwtauth.JWTAuth
 	smsSender phone.SMSSender
-	logger    *logger.Logger
 }
 
 // NewService constructor for AuthService
-func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender phone.SMSSender, logger *logger.Logger) Service {
-	return Service{store: store, tokenAuth: tokenAuth, smsSender: smsSender, logger: logger}
+func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender phone.SMSSender) Service {
+	return Service{store: store, tokenAuth: tokenAuth, smsSender: smsSender}
 }
 
 func (as *Service) getUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
@@ -67,25 +65,21 @@ func (as *Service) consumeVerificationCode(ctx context.Context, verificationID s
 	verificationCode, err := as.store.GetVerificationCodeByIDAndCode(ctx, verificationID, code)
 
 	if err != nil && errors.Is(errors.KindNotFound, err) == false {
-		err = errors.Unexpected(op, err)
-		return nil, err
+		return nil, errors.Unexpected(op, err, "failed to get verification code")
 	}
 
 	if err != nil {
-		err = errors.Invalid(op, "verification code invalid")
-		return nil, err
+		return nil, errors.Invalid(op, err, "verification code invalid")
 	}
 
 	if verificationCode.ExpiredAt.Before(time.Now()) {
-		err = errors.Invalid(op, "verification code expired")
-		return nil, err
+		return nil, errors.Invalid(op, err, "verification code expired")
 	}
 
 	err = as.store.RemoveVerificationCodeByID(ctx, verificationCode.ID)
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		return nil, err
+		return nil, errors.Unexpected(op, err, "failed to remove verification code")
 	}
 
 	return verificationCode, nil
@@ -98,17 +92,13 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 	formattedPhoneNumber, err := phone.FormatPhoneNumber(phoneNumber, countryCode)
 
 	if err != nil {
-		err = errors.Invalid(op, "phone number supplied is invalid")
-		as.logger.Info(err)
-		return "", err
+		return "", errors.Invalid(op, err, "invalid phone number")
 	}
 
 	user, err := as.getUserByPhoneNumber(ctx, formattedPhoneNumber, countryCode)
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
+		return "", errors.Unexpected(op, err, "failed to get user by phone number")
 	}
 
 	// Create and persist new user if it didn't exist yet
@@ -118,26 +108,20 @@ func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryC
 		err = as.store.StoreUser(ctx, user)
 
 		if err != nil {
-			err = errors.Unexpected(op, err)
-			as.logger.Error(err)
-			return "", err
+			return "", errors.Unexpected(op, err, "failed to store user")
 		}
 	}
 
 	verificationCode, err := as.createNewVerificationCode(ctx, user, formattedPhoneNumber, countryCode, "LOGIN")
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
+		return "", errors.Unexpected(op, err, "failed to create new verification code")
 	}
 
 	err = as.smsSender.SendSMS(formattedPhoneNumber, verificationCode.CountryCode, verificationCode.Code)
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
+		return "", errors.Unexpected(op, err, "failed to send sms")
 	}
 
 	return verificationCode.VerificationID, nil
@@ -150,16 +134,13 @@ func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, 
 	verificationCode, err := as.consumeVerificationCode(ctx, verificationID, code)
 
 	if err != nil {
-		as.logger.Error(err)
 		return "", err
 	}
 
 	user, err := as.store.GetUserByID(ctx, verificationCode.UserID)
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
+		return "", errors.Unexpected(op, err, "failed to get user by id")
 	}
 
 	user.IsPhoneNumberVerified = true
@@ -168,17 +149,13 @@ func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, 
 	err = as.store.UpdateUser(ctx, user)
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
+		return "", errors.Unexpected(op, err, "failed to update user")
 	}
 
 	_, accessToken, err := as.tokenAuth.Encode(jwt.MapClaims{"user_id": user.ID})
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return "", err
+		return "", errors.Unexpected(op, err, "failed to encode access token")
 	}
 
 	return accessToken, nil
@@ -190,18 +167,14 @@ func (as *Service) GetCurrentUser(ctx context.Context) (*User, error) {
 	_, claims, err := jwtauth.FromContext(ctx)
 
 	if err != nil {
-		err = errors.Invalid(op, "missing or invalid access token")
-		as.logger.Info(err)
-		return nil, err
+		return nil, errors.Invalid(op, err, "missing or invalid access token")
 	}
 
 	userID := fmt.Sprintf("%v", claims["user_id"])
 	user, err := as.store.GetUserByID(ctx, userID)
 
 	if err != nil {
-		err = errors.Unexpected(op, err)
-		as.logger.Error(err)
-		return nil, err
+		return nil, errors.Unexpected(op, err, "failed to get user by id")
 	}
 
 	return user, nil

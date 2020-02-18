@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/minheq/kedul_server_main/auth"
-	"github.com/minheq/kedul_server_main/errors"
 )
 
 type loginVerifyRequest struct {
@@ -26,20 +25,19 @@ func (rd *loginVerifyResponse) Render(w http.ResponseWriter, r *http.Request) er
 	return nil
 }
 
-// HandleLoginVerify handles login verification initialization
-func HandleLoginVerify(authService auth.Service) http.HandlerFunc {
+func (s *server) handleLoginVerify(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := &loginVerifyRequest{}
 
 		if err := render.Bind(r, data); err != nil {
-			_ = render.Render(w, r, errors.NewErrResponse(err))
+			s.respondError(w, r, err)
 			return
 		}
 
 		verificationID, err := authService.LoginVerify(r.Context(), data.PhoneNumber, data.CountryCode)
 
 		if err != nil {
-			_ = render.Render(w, r, errors.NewErrResponse(err))
+			s.respondError(w, r, err)
 			return
 		}
 
@@ -64,20 +62,19 @@ func (rd *loginVerifyCheckResponse) Render(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// HandleLoginVerifyCheck handles login verification checking
-func HandleLoginVerifyCheck(authService auth.Service) http.HandlerFunc {
+func (s *server) handleLoginVerifyCheck(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := &loginVerifyCheckRequest{}
 
 		if err := render.Bind(r, data); err != nil {
-			_ = render.Render(w, r, errors.NewErrResponse(err))
+			s.respondError(w, r, err)
 			return
 		}
 
 		accessToken, err := authService.LoginVerifyCheck(r.Context(), data.VerificationID, data.Code)
 
 		if err != nil {
-			_ = render.Render(w, r, errors.NewErrResponse(err))
+			s.respondError(w, r, err)
 			return
 		}
 
@@ -111,13 +108,12 @@ func (rd *userResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// HandleGetCurrentUser get currently authenticated user
-func HandleGetCurrentUser(authService auth.Service) http.HandlerFunc {
+func (s *server) handleGetCurrentUser(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := authService.GetCurrentUser(r.Context())
 
 		if err != nil {
-			_ = render.Render(w, r, errors.NewErrResponse(err))
+			s.respondError(w, r, err)
 			return
 		}
 

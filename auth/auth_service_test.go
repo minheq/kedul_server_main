@@ -9,9 +9,7 @@ import (
 	"github.com/go-chi/jwtauth"
 	"github.com/google/uuid"
 	"github.com/minheq/kedul_server_main/errors"
-	"github.com/minheq/kedul_server_main/logger"
 	"github.com/minheq/kedul_server_main/testutils"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -27,10 +25,8 @@ func TestMain(m *testing.M) {
 
 	store = NewStore(db)
 	smsSender = &testutils.SmsSenderMock{}
-	l := logger.NewLogger()
-	l.SetLevel(logrus.ErrorLevel)
 
-	authService = NewService(store, tokenAuth, smsSender, l)
+	authService = NewService(store, tokenAuth, smsSender)
 
 	code := m.Run()
 

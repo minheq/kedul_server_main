@@ -47,7 +47,7 @@ type Error struct {
 }
 
 // Invalid returns Error with KindInvalid
-func Invalid(op string, message string) *Error {
+func Invalid(op string, err error, message string) *Error {
 	return &Error{Kind: KindInvalid, Op: op, Message: message}
 }
 
@@ -62,7 +62,7 @@ func NotFound(op string) *Error {
 }
 
 // Unexpected returns Error with KindUnexpected
-func Unexpected(op string, err error) *Error {
+func Unexpected(op string, err error, message string) *Error {
 	return &Error{Kind: KindUnexpected, Op: op, Err: err}
 }
 
