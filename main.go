@@ -13,7 +13,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/logger"
-	"github.com/minheq/kedul_server_main/sms"
+	"github.com/minheq/kedul_server_main/phone"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +45,7 @@ func main() {
 	}).Handler)
 
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	smsSender := sms.NewSender()
+	smsSender := phone.NewSMSSender()
 
 	authStore := auth.NewStore(db)
 	authService := auth.NewService(authStore, tokenAuth, smsSender, l)
@@ -55,6 +55,8 @@ func main() {
 	r.Post("/login_verify", HandleLoginVerify(authService))
 	r.Post("/login_verify_check", HandleLoginVerifyCheck(authService))
 	r.Get("/current_user", HandleGetCurrentUser(authService))
+	// r.Post("/update_phone_number_verify", HandleUpdatePhoneNumberVerify(authService))
+	// r.Post("/update_phone_number_verify_check", HandleGetCurrentUser(authService))
 
 	fmt.Println("Server listening at localhost:4000")
 

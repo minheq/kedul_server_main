@@ -9,35 +9,21 @@ import (
 	"github.com/go-chi/jwtauth"
 	"github.com/minheq/kedul_server_main/errors"
 	"github.com/minheq/kedul_server_main/logger"
+	"github.com/minheq/kedul_server_main/phone"
 	"github.com/minheq/kedul_server_main/random"
-	"github.com/minheq/kedul_server_main/sms"
-	"github.com/nyaruka/phonenumbers"
 )
 
 // Service handles authentication
 type Service struct {
 	store     Store
 	tokenAuth *jwtauth.JWTAuth
-	smsSender sms.Sender
+	smsSender phone.SMSSender
 	logger    *logger.Logger
 }
 
 // NewService constructor for AuthService
-func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender sms.Sender, logger *logger.Logger) Service {
+func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender phone.SMSSender, logger *logger.Logger) Service {
 	return Service{store: store, tokenAuth: tokenAuth, smsSender: smsSender, logger: logger}
-}
-
-func (as *Service) formatPhoneNumber(phoneNumber string, countryCode string) (string, error) {
-	const op = "auth/auth_service.formatPhoneNumber"
-	parsedPhoneNumber, err := phonenumbers.Parse(phoneNumber, countryCode)
-
-	if err != nil {
-		return "", err
-	}
-
-	formattedPhoneNumber := phonenumbers.Format(parsedPhoneNumber, phonenumbers.NATIONAL)
-
-	return formattedPhoneNumber, nil
 }
 
 func (as *Service) getUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
@@ -109,7 +95,7 @@ func (as *Service) consumeVerificationCode(ctx context.Context, verificationID s
 func (as *Service) LoginVerify(ctx context.Context, phoneNumber string, countryCode string) (string, error) {
 	const op = "auth/auth_service.LoginVerify"
 
-	formattedPhoneNumber, err := as.formatPhoneNumber(phoneNumber, countryCode)
+	formattedPhoneNumber, err := phone.FormatPhoneNumber(phoneNumber, countryCode)
 
 	if err != nil {
 		err = errors.Invalid(op, "phone number supplied is invalid")
