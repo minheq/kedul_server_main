@@ -103,8 +103,8 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	t.Run("should return error when log in verify with expired verification code", func(t *testing.T) {
 		_, err := authService.LoginVerifyCheck(context.Background(), expiredVerificationCode.VerificationID, expiredVerificationCode.Code)
 
-		if !errors.Is(errors.KindInvalid, err) {
-			t.Error("should forbid")
+		if errors.Is(errors.KindInvalid, err) == false {
+			t.Error("error should be invalid kind")
 		}
 	})
 }

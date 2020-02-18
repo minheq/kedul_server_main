@@ -134,7 +134,7 @@ func (as *Service) LoginVerifyCheck(ctx context.Context, verificationID string, 
 	verificationCode, err := as.consumeVerificationCode(ctx, verificationID, code)
 
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(op, err, "failed to consume verification code")
 	}
 
 	user, err := as.store.GetUserByID(ctx, verificationCode.UserID)

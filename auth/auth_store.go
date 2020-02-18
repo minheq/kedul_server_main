@@ -39,7 +39,7 @@ func (s *Store) GetVerificationCodeByIDAndCode(ctx context.Context, verification
 	}
 
 	if err != nil {
-		return nil, errors.Unexpected(op, err, "database error")
+		return nil, errors.Wrap(op, err, "database error")
 	}
 
 	return &vc, nil
@@ -57,7 +57,7 @@ func (s *Store) StoreVerificationCode(ctx context.Context, vc *VerificationCode)
 	_, err := s.db.Exec(query, vc.ID, vc.UserID, vc.Code, vc.VerificationID, vc.CodeType, vc.PhoneNumber, vc.CountryCode, vc.ExpiredAt, vc.CreatedAt)
 
 	if err != nil {
-		return errors.Unexpected(op, err, "database error")
+		return errors.Wrap(op, err, "database error")
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (s *Store) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNu
 	_, err := s.db.Exec(query, phoneNumber, countryCode)
 
 	if err != nil {
-		return errors.Unexpected(op, err, "database error")
+		return errors.Wrap(op, err, "database error")
 	}
 
 	return nil
@@ -93,7 +93,7 @@ func (s *Store) RemoveVerificationCodeByID(ctx context.Context, id string) error
 	_, err := s.db.Exec(query, id)
 
 	if err != nil {
-		return errors.Unexpected(op, err, "database error")
+		return errors.Wrap(op, err, "database error")
 	}
 
 	return nil
@@ -120,7 +120,7 @@ func (s *Store) GetUserByID(ctx context.Context, id string) (*User, error) {
 	}
 
 	if err != nil {
-		return nil, errors.Unexpected(op, err, "database error")
+		return nil, errors.Wrap(op, err, "database error")
 	}
 
 	return &user, nil
@@ -148,7 +148,7 @@ func (s *Store) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, co
 	}
 
 	if err != nil {
-		return nil, errors.Unexpected(op, err, "database error")
+		return nil, errors.Wrap(op, err, "database error")
 	}
 
 	return &user, nil
@@ -166,7 +166,7 @@ func (s *Store) StoreUser(ctx context.Context, user *User) error {
 	_, err := s.db.Exec(query, user.ID, user.FullName, user.PhoneNumber, user.CountryCode, user.IsPhoneNumberVerified, user.CreatedAt, user.UpdatedAt)
 
 	if err != nil {
-		return errors.Unexpected(op, err, "database error")
+		return errors.Wrap(op, err, "database error")
 	}
 
 	return nil
@@ -185,7 +185,7 @@ func (s *Store) UpdateUser(ctx context.Context, user *User) error {
 	_, err := s.db.Exec(query, user.ID, user.FullName, user.PhoneNumber, user.CountryCode, user.IsPhoneNumberVerified, user.CreatedAt, user.UpdatedAt)
 
 	if err != nil {
-		return errors.Unexpected(op, err, "database error")
+		return errors.Wrap(op, err, "database error")
 	}
 
 	return nil
