@@ -55,8 +55,9 @@ type RequestLoggerEntry struct {
 
 func (l *RequestLoggerEntry) Write(status, bytes int, elapsed time.Duration) {
 	l.Logger = l.Logger.WithFields(Fields{
-		"status":          status,
-		"resp_elapsed_ms": float64(elapsed.Nanoseconds()) / 1000000.0,
+		"resp_bytes_length": bytes,
+		"resp_status":       status,
+		"resp_elapsed_ms":   float64(elapsed.Nanoseconds()) / 1000000.0,
 	})
 
 	l.Logger.Infoln("request complete")
