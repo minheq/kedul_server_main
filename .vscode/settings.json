@@ -2,5 +2,29 @@
   "cSpell.words": [
     "kedul",
     "testutils"
+  ],
+  "go.testEnvVars": {
+    "DATABASE_NAME": "kedul",
+    "DATABASE_URL": "postgres://postgres@127.0.0.1:5432/kedul_test?sslmode=disable",
+  },
+  "sqltools.connections": [
+    {
+      "askForPassword": false,
+      "database": "kedul",
+      "dialect": "PostgreSQL",
+      "name": "kedul",
+      "port": 5432,
+      "server": "localhost",
+      "username": "postgres"
+    },
+    {
+      "askForPassword": false,
+      "database": "kedul_test",
+      "dialect": "PostgreSQL",
+      "name": "kedul_test",
+      "port": 5432,
+      "server": "localhost",
+      "username": "postgres"
+    }
   ]
 }

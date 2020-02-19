@@ -2,6 +2,8 @@ package testutils
 
 import (
 	"database/sql"
+	"log"
+	"os"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -11,12 +13,32 @@ import (
 
 // SetupDB connects to database and runs migrations
 func SetupDB() (db *sql.DB, cleanup func() error) {
-	db, _ = sql.Open("postgres", "postgres://postgres@127.0.0.1:5432/kedul?sslmode=disable")
-	driver, _ := postgres.WithInstance(db, &postgres.Config{})
-	migrations, _ := migrate.NewWithDatabaseInstance("file://../migrations", "kedul", driver)
+	dbURL := os.Getenv("DATABASE_URL")
+	databaseName := os.Getenv("DATABASE_NAME")
+	db, err := sql.Open("postgres", dbURL)
 
-	migrations.Down()
-	migrations.Up()
+	if err != nil {
+		log.Fatalf("error opening database with DATABASE_URL=%s", dbURL)
+	}
+
+	driver, _ := postgres.WithInstance(db, &postgres.Config{})
+	migrations, err := migrate.NewWithDatabaseInstance("file://../migrations", databaseName, driver)
+
+	if err != nil {
+		log.Fatal("error instantiating migrations")
+	}
+
+	err = migrations.Down()
+
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("error running migrations down, %v", err)
+	}
+
+	err = migrations.Up()
+
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("error running migrations up, %v", err)
+	}
 
 	return db, db.Close
 }

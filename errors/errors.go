@@ -47,7 +47,7 @@ type Error struct {
 }
 
 // Invalid returns Error with KindInvalid
-func Invalid(op string, message string) *Error {
+func Invalid(op string, err error, message string) *Error {
 	return &Error{Kind: KindInvalid, Op: op, Message: message}
 }
 
@@ -58,32 +58,56 @@ func Unauthorized(op string) *Error {
 
 // NotFound returns Error with KindNotFound
 func NotFound(op string) *Error {
-	return &Error{Kind: KindNotFound, Op: op}
+	return &Error{Kind: KindNotFound, Op: op, Message: "not found"}
 }
 
 // Unexpected returns Error with KindUnexpected
-func Unexpected(op string, err error) *Error {
-	return &Error{Kind: KindUnexpected, Op: op, Err: err}
+func Unexpected(op string, err error, message string) *Error {
+	return &Error{Kind: KindUnexpected, Op: op, Err: err, Message: message}
+}
+
+// Wrap wraps the inner error
+func Wrap(op string, err error, message string) *Error {
+	return &Error{Op: op, Err: err, Message: message}
+}
+
+// Ops prints the stacktrace
+func Ops(e *Error) []string {
+	res := []string{e.Op}
+
+	subErr, ok := e.Err.(*Error)
+
+	if !ok {
+		return res
+	}
+
+	res = append(res, Ops(subErr)...)
+
+	return res
 }
 
 func (e *Error) Error() string {
 	var b bytes.Buffer
 
 	if e.Op != "" {
-		fmt.Fprintf(&b, "%s: ", e.Op)
+		fmt.Fprintf(&b, "%s, %s: ", e.Op, e.Message)
 	}
 
 	if e.Err != nil {
+		_, ok := e.Err.(*Error)
+
+		if !ok {
+			fmt.Fprintf(&b, "%s: ", e.Err.Error())
+			return b.String()
+		}
 		b.WriteString(e.Err.Error())
 
 		return b.String()
 	}
 
 	if e.Kind != 0 {
-		fmt.Fprintf(&b, "%s: ", e.Kind)
+		fmt.Fprintf(&b, "kind: [%s]", e.Kind)
 	}
-
-	b.WriteString(e.Message)
 
 	return b.String()
 }
@@ -103,21 +127,22 @@ func ErrorMessage(err error) string {
 	return "An internal error has occurred. Please contact technical support."
 }
 
+// ErrorKind extract error kind from error values
+func ErrorKind(err error) Kind {
+	if err == nil {
+		return 0
+	}
+
+	if e, ok := err.(*Error); ok && e.Kind != 0 {
+		return e.Kind
+	} else if ok && e.Err != nil {
+		return ErrorKind(e.Err)
+	}
+
+	return KindUnexpected
+}
+
 // Is compares whether error matches the kind
 func Is(kind Kind, err error) bool {
-	e, ok := err.(*Error)
-
-	if !ok {
-		return false
-	}
-
-	if e.Kind != KindUnexpected {
-		return e.Kind == kind
-	}
-
-	if e.Err != nil {
-		return Is(kind, e.Err)
-	}
-
-	return false
+	return kind == ErrorKind(err)
 }

@@ -1,18 +1,18 @@
-package sms
+package phone
 
 import (
 	"fmt"
 )
 
-// Sender is a SMTP mailer.
-type Sender interface {
+// SMSSender sends sms.
+type SMSSender interface {
 	SendSMS(phoneNumber string, countryCode string, text string) error
 }
 
 type sender struct{}
 
-// NewSender constructor for SMSSender
-func NewSender() Sender {
+// NewSMSSender constructor for SMSSender
+func NewSMSSender() SMSSender {
 	return &sender{}
 }
 
