@@ -3,6 +3,8 @@ package errors
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/minheq/kedul_server_main/logger"
 )
 
 // Kind is category of the error
@@ -44,26 +46,28 @@ type Error struct {
 
 	// Wrapped error value
 	Err error
+
+	LogSeverity logger.Level
 }
 
 // Invalid returns Error with KindInvalid
 func Invalid(op string, err error, message string) *Error {
-	return &Error{Kind: KindInvalid, Op: op, Message: message}
+	return &Error{Kind: KindInvalid, Op: op, Message: message, LogSeverity: logger.InfoLevel}
 }
 
 // Unauthorized returns Error with KindUnauthorized
 func Unauthorized(op string) *Error {
-	return &Error{Kind: KindUnauthorized, Op: op}
+	return &Error{Kind: KindUnauthorized, Op: op, Message: "unauthorized", LogSeverity: logger.WarnLevel}
 }
 
 // NotFound returns Error with KindNotFound
 func NotFound(op string) *Error {
-	return &Error{Kind: KindNotFound, Op: op, Message: "not found"}
+	return &Error{Kind: KindNotFound, Op: op, Message: "not found", LogSeverity: logger.InfoLevel}
 }
 
 // Unexpected returns Error with KindUnexpected
 func Unexpected(op string, err error, message string) *Error {
-	return &Error{Kind: KindUnexpected, Op: op, Err: err, Message: message}
+	return &Error{Kind: KindUnexpected, Op: op, Err: err, Message: message, LogSeverity: logger.ErrorLevel}
 }
 
 // Wrap wraps the inner error
@@ -140,6 +144,21 @@ func ErrorKind(err error) Kind {
 	}
 
 	return KindUnexpected
+}
+
+// ErrorLogSeverity extract error kind from error values
+func ErrorLogSeverity(err error) logger.Level {
+	if err == nil {
+		return 0
+	}
+
+	if e, ok := err.(*Error); ok && e.Kind != 0 {
+		return e.LogSeverity
+	} else if ok && e.Err != nil {
+		return ErrorLogSeverity(e.Err)
+	}
+
+	return logger.ErrorLevel
 }
 
 // Is compares whether error matches the kind

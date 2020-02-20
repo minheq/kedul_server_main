@@ -4,6 +4,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	DebugLevel = logrus.DebugLevel
+	InfoLevel  = logrus.InfoLevel
+	WarnLevel  = logrus.WarnLevel
+	ErrorLevel = logrus.ErrorLevel
+	FatalLevel = logrus.FatalLevel
+)
+
 // Level log level
 type Level = logrus.Level
 
@@ -30,6 +38,21 @@ func NewLogger() *Logger {
 	}
 
 	return &Logger{entry: logrus.NewEntry(l)}
+}
+
+// Log logs a message at level Log on the standard logger.
+func (l *Logger) Log(level Level, args ...interface{}) {
+	l.entry.Log(level, args...)
+}
+
+// Logf logs a message at level Logf on the standard logger.
+func (l *Logger) Logf(level Level, format string, args ...interface{}) {
+	l.entry.Logf(level, format, args...)
+}
+
+// Logln logs a message at level Logln on the standard logger.
+func (l *Logger) Logln(level Level, format string, args ...interface{}) {
+	l.entry.Logln(level, args...)
 }
 
 // Debug logs a message at level Debug on the standard logger.

@@ -69,9 +69,12 @@ func (s *server) routes() {
 	// protected handlers
 	s.router.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(jwtauth.Authenticator)
-		r.Use(addCurrentUserContext(authService))
 
+		// middlewares
+		r.Use(s.requireAuthentication)
+		r.Use(s.addCurrentUserContext(authService))
+
+		// handlers
 		r.Get("/auth/current_user", s.handleGetCurrentUser(authService))
 		r.Post("/auth/update_phone_number_verify", s.handleUpdatePhoneNumberVerify(authService))
 		r.Post("/auth/update_phone_number_check", s.handleUpdatePhoneNumberCheck(authService))
@@ -80,6 +83,7 @@ func (s *server) routes() {
 }
 
 func (s *server) respondError(w http.ResponseWriter, r *http.Request, err error) {
-	s.logger.Error((err))
+	s.logger.Log(errors.ErrorLogSeverity(err), err)
+
 	_ = render.Render(w, r, errors.NewErrResponse(err))
 }
