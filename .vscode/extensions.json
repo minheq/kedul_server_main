@@ -1,0 +1,11 @@
+{
+    "recommendations": [
+        "streetsidesoftware.code-spell-checker",
+        "mtxr.sqltools",
+        "ms-vscode.go",
+        "github.vscode-pull-request-github",
+        "ms-vscode.cpptools",
+        "eamodio.gitlens",
+        "visualstudioexptteam.vscodeintellicode"
+    ]
+}
