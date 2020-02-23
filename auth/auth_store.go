@@ -8,18 +8,30 @@ import (
 )
 
 // Store ...
-type Store struct {
+type Store interface {
+	GetVerificationCodeByIDAndCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error)
+	StoreVerificationCode(ctx context.Context, vc *VerificationCode) error
+	RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error
+	RemoveVerificationCodeByID(ctx context.Context, id string) error
+	GetUserByID(ctx context.Context, id string) (*User, error)
+	GetUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error)
+	StoreUser(ctx context.Context, user *User) error
+	UpdateUser(ctx context.Context, user *User) error
+}
+
+// store ...
+type store struct {
 	db *sql.DB
 }
 
 // NewStore ...
 func NewStore(db *sql.DB) Store {
-	return Store{db: db}
+	return &store{db: db}
 }
 
 // GetVerificationCodeByIDAndCode gets VerificationCode by code
-func (s *Store) GetVerificationCodeByIDAndCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error) {
-	const op = "auth/auth_store.GetVerificationCodeByIDAndCode"
+func (s *store) GetVerificationCodeByIDAndCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error) {
+	const op = "auth/store.GetVerificationCodeByIDAndCode"
 
 	query := `
 		SELECT id, user_id, code, verification_id, code_type, phone_number, country_code, expired_at, created_at
@@ -35,7 +47,7 @@ func (s *Store) GetVerificationCodeByIDAndCode(ctx context.Context, verification
 	err := row.Scan(&vc.ID, &vc.UserID, &vc.Code, &vc.VerificationID, &vc.CodeType, &vc.PhoneNumber, &vc.CountryCode, &vc.ExpiredAt, &vc.CreatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, errors.NotFound(op)
+		return nil, nil
 	}
 
 	if err != nil {
@@ -46,8 +58,8 @@ func (s *Store) GetVerificationCodeByIDAndCode(ctx context.Context, verification
 }
 
 // StoreVerificationCode persists VerificationCode
-func (s *Store) StoreVerificationCode(ctx context.Context, vc *VerificationCode) error {
-	const op = "auth/auth_store.StoreVerificationCode"
+func (s *store) StoreVerificationCode(ctx context.Context, vc *VerificationCode) error {
+	const op = "auth/store.StoreVerificationCode"
 
 	query := `
 		INSERT INTO verification_code (id, user_id, code, verification_id, code_type, phone_number, country_code, expired_at, created_at)
@@ -64,8 +76,8 @@ func (s *Store) StoreVerificationCode(ctx context.Context, vc *VerificationCode)
 }
 
 // RemoveVerificationCodeByPhoneNumber removes VerificationCode
-func (s *Store) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
-	const op = "auth/auth_store.RemoveVerificationCodeByPhoneNumber"
+func (s *store) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
+	const op = "auth/store.RemoveVerificationCodeByPhoneNumber"
 
 	query := `
 		DELETE FROM verification_code
@@ -82,8 +94,8 @@ func (s *Store) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNu
 }
 
 // RemoveVerificationCodeByID removes VerificationCode by Id
-func (s *Store) RemoveVerificationCodeByID(ctx context.Context, id string) error {
-	const op = "auth/auth_store.RemoveVerificationCodeByID"
+func (s *store) RemoveVerificationCodeByID(ctx context.Context, id string) error {
+	const op = "auth/store.RemoveVerificationCodeByID"
 
 	query := `
 		DELETE FROM verification_code
@@ -100,8 +112,8 @@ func (s *Store) RemoveVerificationCodeByID(ctx context.Context, id string) error
 }
 
 // GetUserByID gets User by ID
-func (s *Store) GetUserByID(ctx context.Context, id string) (*User, error) {
-	const op = "auth/auth_store.GetUserByPhoneNumber"
+func (s *store) GetUserByID(ctx context.Context, id string) (*User, error) {
+	const op = "auth/store.GetUserByPhoneNumber"
 
 	query := `
 		SELECT id, full_name, phone_number, country_code, is_phone_number_verified, created_at, updated_at
@@ -116,7 +128,7 @@ func (s *Store) GetUserByID(ctx context.Context, id string) (*User, error) {
 	err := row.Scan(&user.ID, &user.FullName, &user.PhoneNumber, &user.CountryCode, &user.IsPhoneNumberVerified, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, errors.NotFound(op)
+		return nil, nil
 	}
 
 	if err != nil {
@@ -127,8 +139,8 @@ func (s *Store) GetUserByID(ctx context.Context, id string) (*User, error) {
 }
 
 // GetUserByPhoneNumber gets User by Phone Number
-func (s *Store) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
-	const op = "auth/auth_store.GetUserByPhoneNumber"
+func (s *store) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
+	const op = "auth/store.GetUserByPhoneNumber"
 
 	query := `
 		SELECT id, full_name, phone_number, country_code, is_phone_number_verified, created_at, updated_at
@@ -144,7 +156,7 @@ func (s *Store) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, co
 	err := row.Scan(&user.ID, &user.FullName, &user.PhoneNumber, &user.CountryCode, &user.IsPhoneNumberVerified, &user.CreatedAt, &user.UpdatedAt)
 
 	if err == sql.ErrNoRows {
-		return nil, errors.NotFound(op)
+		return nil, nil
 	}
 
 	if err != nil {
@@ -155,8 +167,8 @@ func (s *Store) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, co
 }
 
 // StoreUser persists User
-func (s *Store) StoreUser(ctx context.Context, user *User) error {
-	const op = "auth/auth_store.StoreUser"
+func (s *store) StoreUser(ctx context.Context, user *User) error {
+	const op = "auth/store.StoreUser"
 
 	query := `
 		INSERT INTO kedul_user (id, full_name, phone_number, country_code, is_phone_number_verified, created_at, updated_at)
@@ -173,8 +185,8 @@ func (s *Store) StoreUser(ctx context.Context, user *User) error {
 }
 
 // UpdateUser updates User including all fields
-func (s *Store) UpdateUser(ctx context.Context, user *User) error {
-	const op = "auth/auth_store.UpdateUser"
+func (s *store) UpdateUser(ctx context.Context, user *User) error {
+	const op = "auth/store.UpdateUser"
 
 	query := `
 		UPDATE kedul_user

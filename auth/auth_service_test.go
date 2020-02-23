@@ -13,25 +13,101 @@ import (
 	"github.com/minheq/kedul_server_main/testutils"
 )
 
+type mockAuthStore struct {
+	users             []*User
+	verificationCodes []*VerificationCode
+}
+
+func (s *mockAuthStore) GetVerificationCodeByIDAndCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error) {
+	for _, v := range s.verificationCodes {
+		if v.VerificationID == verificationID && v.Code == code {
+			return v, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s *mockAuthStore) StoreVerificationCode(ctx context.Context, vc *VerificationCode) error {
+	s.verificationCodes = append(s.verificationCodes, vc)
+
+	return nil
+}
+
+func (s *mockAuthStore) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
+	for i, v := range s.verificationCodes {
+		if v.PhoneNumber == phoneNumber && v.CountryCode == countryCode {
+			s.verificationCodes = append(s.verificationCodes[:i], s.verificationCodes[i+1:]...)
+			break
+		}
+	}
+
+	return nil
+}
+
+func (s *mockAuthStore) RemoveVerificationCodeByID(ctx context.Context, id string) error {
+	for i, v := range s.verificationCodes {
+		if v.ID == id {
+			s.verificationCodes = append(s.verificationCodes[:i], s.verificationCodes[i+1:]...)
+			break
+		}
+	}
+
+	return nil
+}
+
+func (s *mockAuthStore) GetUserByID(ctx context.Context, id string) (*User, error) {
+	for _, u := range s.users {
+		if u.ID == id {
+			return u, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s *mockAuthStore) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
+	for _, u := range s.users {
+		if u.PhoneNumber == phoneNumber && u.CountryCode == countryCode {
+			return u, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s *mockAuthStore) StoreUser(ctx context.Context, user *User) error {
+	s.users = append(s.users, user)
+
+	return nil
+}
+
+func (s *mockAuthStore) UpdateUser(ctx context.Context, user *User) error {
+	for i, u := range s.users {
+		if u.ID == user.ID {
+			s.users[i] = user
+			break
+		}
+	}
+
+	return nil
+}
+
 var (
-	store       Store
+	mockStore   Store
 	authService Service
 	smsSender   *testutils.SmsSenderMock
 )
 
 func TestMain(m *testing.M) {
-	db, cleanup := testutils.SetupDB()
-
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
 
-	store = NewStore(db)
+	mockStore = &mockAuthStore{}
 	smsSender = &testutils.SmsSenderMock{}
 
-	authService = NewService(store, tokenAuth, smsSender)
+	authService = NewService(mockStore, tokenAuth, smsSender)
 
 	code := m.Run()
-
-	cleanup()
 
 	os.Exit(code)
 }
@@ -76,7 +152,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	phoneNumber, _ := phone.FormatPhoneNumber("999999999", "VN")
 	user := NewUser(phoneNumber, "VN")
 
-	err := store.StoreUser(context.Background(), user)
+	err := mockStore.StoreUser(context.Background(), user)
 
 	if err != nil {
 		t.Error(err)
@@ -95,7 +171,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 		CreatedAt:      now,
 	}
 
-	err = store.StoreVerificationCode(context.Background(), expiredVerificationCode)
+	err = mockStore.StoreVerificationCode(context.Background(), expiredVerificationCode)
 
 	if err != nil {
 		t.Error(err)
@@ -162,7 +238,7 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 	newPhoneNumber, err := phone.FormatPhoneNumber("999111336", "VN")
 
 	currentUser := NewUser(prevPhoneNumber, "VN")
-	err = store.StoreUser(context.Background(), currentUser)
+	err = mockStore.StoreUser(context.Background(), currentUser)
 
 	if err != nil {
 		t.Error(err)
@@ -202,7 +278,7 @@ func TestUpdateUserProfileHappyPath(t *testing.T) {
 	phoneNumber, err := phone.FormatPhoneNumber("999111337", "VN")
 
 	currentUser := NewUser(phoneNumber, "VN")
-	err = store.StoreUser(context.Background(), currentUser)
+	err = mockStore.StoreUser(context.Background(), currentUser)
 	newFullName := "new_name"
 	newProfileImageID := "new_profile_image_id"
 
