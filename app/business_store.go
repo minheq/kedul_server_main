@@ -1,4 +1,4 @@
-package business
+package app
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"github.com/minheq/kedul_server_main/errors"
 )
 
-// Store ...
-type Store interface {
+// BusinessStore ...
+type BusinessStore interface {
 	GetBusinessByID(ctx context.Context, id string) (*Business, error)
 	GetBusinessByName(ctx context.Context, name string) (*Business, error)
 	StoreBusiness(ctx context.Context, b *Business) error
@@ -16,19 +16,19 @@ type Store interface {
 	DeleteBusiness(ctx context.Context, b *Business) error
 }
 
-// store ...
-type store struct {
+// businessStore ...
+type businessStore struct {
 	db *sql.DB
 }
 
 // NewStore ...
-func NewStore(db *sql.DB) Store {
-	return &store{db: db}
+func NewStore(db *sql.DB) BusinessStore {
+	return &businessStore{db: db}
 }
 
 // GetBusinessByID gets Business by ID
-func (s *store) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
-	const op = "business/store.GetBusinessByPhoneNumber"
+func (s *businessStore) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
+	const op = "business/businessStore.GetBusinessByPhoneNumber"
 
 	query := `
 		SELECT id, user_id, name, profile_image_id, created_at, updated_at
@@ -54,8 +54,8 @@ func (s *store) GetBusinessByID(ctx context.Context, id string) (*Business, erro
 }
 
 // GetBusinessByName gets Business by name
-func (s *store) GetBusinessByName(ctx context.Context, name string) (*Business, error) {
-	const op = "business/store.GetBusinessByName"
+func (s *businessStore) GetBusinessByName(ctx context.Context, name string) (*Business, error) {
+	const op = "business/businessStore.GetBusinessByName"
 
 	query := `
 		SELECT id, user_id, name, profile_image_id, created_at, updated_at
@@ -81,8 +81,8 @@ func (s *store) GetBusinessByName(ctx context.Context, name string) (*Business, 
 }
 
 // StoreBusiness persists Business
-func (s *store) StoreBusiness(ctx context.Context, b *Business) error {
-	const op = "business/store.StoreBusiness"
+func (s *businessStore) StoreBusiness(ctx context.Context, b *Business) error {
+	const op = "business/businessStore.StoreBusiness"
 
 	query := `
 		INSERT INTO business (id, user_id, name, profile_image_id, created_at, updated_at)
@@ -99,8 +99,8 @@ func (s *store) StoreBusiness(ctx context.Context, b *Business) error {
 }
 
 // UpdateBusiness updates Business including all fields
-func (s *store) UpdateBusiness(ctx context.Context, b *Business) error {
-	const op = "business/store.UpdateBusiness"
+func (s *businessStore) UpdateBusiness(ctx context.Context, b *Business) error {
+	const op = "business/businessStore.UpdateBusiness"
 
 	query := `
 		UPDATE business
@@ -118,8 +118,8 @@ func (s *store) UpdateBusiness(ctx context.Context, b *Business) error {
 }
 
 // DeleteBusiness deletes Business
-func (s *store) DeleteBusiness(ctx context.Context, b *Business) error {
-	const op = "business/store.DeleteBusiness"
+func (s *businessStore) DeleteBusiness(ctx context.Context, b *Business) error {
+	const op = "business/businessStore.DeleteBusiness"
 
 	query := `
 		DELETE FROM business

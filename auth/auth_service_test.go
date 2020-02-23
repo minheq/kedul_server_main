@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/minheq/kedul_server_main/errors"
 	"github.com/minheq/kedul_server_main/phone"
-	"github.com/minheq/kedul_server_main/testutils"
 )
 
 type mockAuthStore struct {
@@ -93,24 +91,21 @@ func (s *mockAuthStore) UpdateUser(ctx context.Context, user *User) error {
 	return nil
 }
 
-var (
-	mockStore   Store
-	authService Service
-	smsSender   *testutils.SmsSenderMock
-)
-
-func TestMain(m *testing.M) {
-	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-
-	mockStore = &mockAuthStore{}
-	smsSender = &testutils.SmsSenderMock{}
-
-	authService = NewService(mockStore, tokenAuth, smsSender)
-
-	code := m.Run()
-
-	os.Exit(code)
+type smsSenderMock struct {
+	Text string
 }
+
+func (s *smsSenderMock) SendSMS(phoneNumber string, countryCode string, text string) error {
+	s.Text = text
+	return nil
+}
+
+var (
+	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
+	ms        = &mockAuthStore{}
+	smsSender = &smsSenderMock{}
+	as        = NewService(ms, tokenAuth, smsSender)
+)
 
 func TestLoginHappyPath(t *testing.T) {
 	var code string
@@ -118,7 +113,7 @@ func TestLoginHappyPath(t *testing.T) {
 	var err error
 
 	t.Run("should send code and return verificationID when login start", func(t *testing.T) {
-		verificationID, err = authService.LoginVerify(context.Background(), "999111333", "VN")
+		verificationID, err = as.LoginVerify(context.Background(), "999111333", "VN")
 		code = smsSender.Text
 
 		if err != nil {
@@ -133,7 +128,7 @@ func TestLoginHappyPath(t *testing.T) {
 	})
 
 	t.Run("should return access token when login verified", func(t *testing.T) {
-		accessToken, err := authService.LoginCheck(context.Background(), verificationID, code)
+		accessToken, err := as.LoginCheck(context.Background(), verificationID, code)
 
 		if err != nil {
 			t.Error(err)
@@ -152,7 +147,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	phoneNumber, _ := phone.FormatPhoneNumber("999999999", "VN")
 	user := NewUser(phoneNumber, "VN")
 
-	err := mockStore.StoreUser(context.Background(), user)
+	err := ms.StoreUser(context.Background(), user)
 
 	if err != nil {
 		t.Error(err)
@@ -171,7 +166,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 		CreatedAt:      now,
 	}
 
-	err = mockStore.StoreVerificationCode(context.Background(), expiredVerificationCode)
+	err = ms.StoreVerificationCode(context.Background(), expiredVerificationCode)
 
 	if err != nil {
 		t.Error(err)
@@ -179,7 +174,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	}
 
 	t.Run("should return error when log in verify with expired verification code", func(t *testing.T) {
-		_, err := authService.LoginCheck(context.Background(), expiredVerificationCode.VerificationID, expiredVerificationCode.Code)
+		_, err := as.LoginCheck(context.Background(), expiredVerificationCode.VerificationID, expiredVerificationCode.Code)
 
 		if errors.Is(errors.KindInvalid, err) == false {
 			t.Error("error should be invalid kind")
@@ -195,7 +190,7 @@ func TestLoginVerifyTwice(t *testing.T) {
 	var err error
 
 	t.Run("should send code and return verificationID when login start first time", func(t *testing.T) {
-		verificationIDOne, err = authService.LoginVerify(context.Background(), "999111334", "VN")
+		verificationIDOne, err = as.LoginVerify(context.Background(), "999111334", "VN")
 		codeOne = smsSender.Text
 
 		if err != nil {
@@ -210,7 +205,7 @@ func TestLoginVerifyTwice(t *testing.T) {
 
 	// This behaves like "resending"
 	t.Run("should send different code and verificationID when login start second time", func(t *testing.T) {
-		verificationIDTwo, err = authService.LoginVerify(context.Background(), "999111334", "VN")
+		verificationIDTwo, err = as.LoginVerify(context.Background(), "999111334", "VN")
 		codeTwo = smsSender.Text
 
 		if err != nil {
@@ -238,7 +233,7 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 	newPhoneNumber, err := phone.FormatPhoneNumber("999111336", "VN")
 
 	currentUser := NewUser(prevPhoneNumber, "VN")
-	err = mockStore.StoreUser(context.Background(), currentUser)
+	err = ms.StoreUser(context.Background(), currentUser)
 
 	if err != nil {
 		t.Error(err)
@@ -246,7 +241,7 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 	}
 
 	t.Run("should send code and return verificationID when login start", func(t *testing.T) {
-		verificationID, err = authService.UpdatePhoneNumberVerify(context.Background(), newPhoneNumber, "VN", currentUser)
+		verificationID, err = as.UpdatePhoneNumberVerify(context.Background(), newPhoneNumber, "VN", currentUser)
 		code = smsSender.Text
 
 		if err != nil {
@@ -261,7 +256,7 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 	})
 
 	t.Run("should return access token when login verified", func(t *testing.T) {
-		user, err := authService.UpdatePhoneNumberCheck(context.Background(), verificationID, code, currentUser)
+		user, err := as.UpdatePhoneNumberCheck(context.Background(), verificationID, code, currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -278,7 +273,7 @@ func TestUpdateUserProfileHappyPath(t *testing.T) {
 	phoneNumber, err := phone.FormatPhoneNumber("999111337", "VN")
 
 	currentUser := NewUser(phoneNumber, "VN")
-	err = mockStore.StoreUser(context.Background(), currentUser)
+	err = ms.StoreUser(context.Background(), currentUser)
 	newFullName := "new_name"
 	newProfileImageID := "new_profile_image_id"
 
@@ -288,7 +283,7 @@ func TestUpdateUserProfileHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update user", func(t *testing.T) {
-		user, err := authService.UpdateUserProfile(context.Background(), newFullName, newProfileImageID, currentUser)
+		user, err := as.UpdateUserProfile(context.Background(), newFullName, newProfileImageID, currentUser)
 
 		if err != nil {
 			t.Error(err)

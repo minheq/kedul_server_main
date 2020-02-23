@@ -1,8 +1,7 @@
-package business
+package app
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/minheq/kedul_server_main/auth"
@@ -61,23 +60,13 @@ func (s *mockBusinessStore) DeleteBusiness(ctx context.Context, business *Busine
 }
 
 var (
-	mockStore       Store
-	businessService Service
+	testBusinessStore   = &mockBusinessStore{}
+	testBusinessService = NewBusinessService(testBusinessStore)
 )
-
-func TestMain(m *testing.M) {
-	mockStore = &mockBusinessStore{}
-
-	businessService = NewService(mockStore)
-
-	code := m.Run()
-
-	os.Exit(code)
-}
 
 func TestCreateBusinessHappyPath(t *testing.T) {
 	t.Run("should create business", func(t *testing.T) {
-		_, err := businessService.CreateBusiness(context.Background(), "1", "business1")
+		_, err := testBusinessService.CreateBusiness(context.Background(), "1", "business1")
 
 		if err != nil {
 			t.Error(err)
@@ -90,7 +79,7 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 	currentUser := auth.NewUser("", "")
 	business := NewBusiness(currentUser.ID, "business2")
 
-	err := mockStore.StoreBusiness(context.Background(), business)
+	err := testBusinessStore.StoreBusiness(context.Background(), business)
 
 	if err != nil {
 		t.Error(err)
@@ -98,7 +87,7 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update business", func(t *testing.T) {
-		_, err := businessService.UpdateBusiness(context.Background(), business.ID, "business3", "", currentUser)
+		_, err := testBusinessService.UpdateBusiness(context.Background(), business.ID, "business3", "", currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -111,7 +100,7 @@ func TestDeleteBusinessHappyPath(t *testing.T) {
 	currentUser := auth.NewUser("", "")
 	business := NewBusiness(currentUser.ID, "business4")
 
-	err := mockStore.StoreBusiness(context.Background(), business)
+	err := testBusinessStore.StoreBusiness(context.Background(), business)
 
 	if err != nil {
 		t.Error(err)
@@ -119,7 +108,7 @@ func TestDeleteBusinessHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update business", func(t *testing.T) {
-		_, err := businessService.DeleteBusiness(context.Background(), business.ID, currentUser)
+		_, err := testBusinessService.DeleteBusiness(context.Background(), business.ID, currentUser)
 
 		if err != nil {
 			t.Error(err)

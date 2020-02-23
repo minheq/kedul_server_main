@@ -1,4 +1,4 @@
-package business
+package app
 
 import (
 	"context"
@@ -9,18 +9,18 @@ import (
 	"github.com/minheq/kedul_server_main/errors"
 )
 
-// Service ...
-type Service struct {
-	store Store
+// BusinessService ...
+type BusinessService struct {
+	store BusinessStore
 }
 
-// NewService constructor for AuthService
-func NewService(store Store) Service {
-	return Service{store: store}
+// NewBusinessService constructor for AuthService
+func NewBusinessService(store BusinessStore) BusinessService {
+	return BusinessService{store: store}
 }
 
 // GetBusinessByID ...
-func (s *Service) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
+func (s *BusinessService) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
 	const op = "business/service.CreateBusiness"
 
 	business, err := s.store.GetBusinessByID(ctx, id)
@@ -33,7 +33,7 @@ func (s *Service) GetBusinessByID(ctx context.Context, id string) (*Business, er
 }
 
 // CreateBusiness creates business
-func (s *Service) CreateBusiness(ctx context.Context, userID string, name string) (*Business, error) {
+func (s *BusinessService) CreateBusiness(ctx context.Context, userID string, name string) (*Business, error) {
 	const op = "business/service.CreateBusiness"
 
 	existingBusiness, err := s.store.GetBusinessByName(ctx, name)
@@ -58,7 +58,7 @@ func (s *Service) CreateBusiness(ctx context.Context, userID string, name string
 }
 
 // UpdateBusiness updates business
-func (s *Service) UpdateBusiness(ctx context.Context, id string, name string, profileImageID string, currentUser *auth.User) (*Business, error) {
+func (s *BusinessService) UpdateBusiness(ctx context.Context, id string, name string, profileImageID string, currentUser *auth.User) (*Business, error) {
 	const op = "business/service.UpdateBusiness"
 
 	existingBusiness, err := s.store.GetBusinessByName(ctx, name)
@@ -99,7 +99,7 @@ func (s *Service) UpdateBusiness(ctx context.Context, id string, name string, pr
 }
 
 // DeleteBusiness updates business
-func (s *Service) DeleteBusiness(ctx context.Context, id string, currentUser *auth.User) (*Business, error) {
+func (s *BusinessService) DeleteBusiness(ctx context.Context, id string, currentUser *auth.User) (*Business, error) {
 	const op = "business/service.DeleteBusiness"
 
 	business, err := s.store.GetBusinessByID(ctx, id)
