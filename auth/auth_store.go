@@ -11,8 +11,8 @@ import (
 type Store interface {
 	GetVerificationCodeByIDAndCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error)
 	StoreVerificationCode(ctx context.Context, vc *VerificationCode) error
-	RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error
-	RemoveVerificationCodeByID(ctx context.Context, id string) error
+	DeleteVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error
+	DeleteVerificationCodeByID(ctx context.Context, id string) error
 	GetUserByID(ctx context.Context, id string) (*User, error)
 	GetUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error)
 	StoreUser(ctx context.Context, user *User) error
@@ -75,9 +75,9 @@ func (s *store) StoreVerificationCode(ctx context.Context, vc *VerificationCode)
 	return nil
 }
 
-// RemoveVerificationCodeByPhoneNumber removes VerificationCode
-func (s *store) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
-	const op = "auth/store.RemoveVerificationCodeByPhoneNumber"
+// DeleteVerificationCodeByPhoneNumber removes VerificationCode
+func (s *store) DeleteVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
+	const op = "auth/store.DeleteVerificationCodeByPhoneNumber"
 
 	query := `
 		DELETE FROM verification_code
@@ -93,9 +93,9 @@ func (s *store) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNu
 	return nil
 }
 
-// RemoveVerificationCodeByID removes VerificationCode by Id
-func (s *store) RemoveVerificationCodeByID(ctx context.Context, id string) error {
-	const op = "auth/store.RemoveVerificationCodeByID"
+// DeleteVerificationCodeByID removes VerificationCode by Id
+func (s *store) DeleteVerificationCodeByID(ctx context.Context, id string) error {
+	const op = "auth/store.DeleteVerificationCodeByID"
 
 	query := `
 		DELETE FROM verification_code

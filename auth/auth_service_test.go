@@ -34,7 +34,7 @@ func (s *mockAuthStore) StoreVerificationCode(ctx context.Context, vc *Verificat
 	return nil
 }
 
-func (s *mockAuthStore) RemoveVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
+func (s *mockAuthStore) DeleteVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
 	for i, v := range s.verificationCodes {
 		if v.PhoneNumber == phoneNumber && v.CountryCode == countryCode {
 			s.verificationCodes = append(s.verificationCodes[:i], s.verificationCodes[i+1:]...)
@@ -45,7 +45,7 @@ func (s *mockAuthStore) RemoveVerificationCodeByPhoneNumber(ctx context.Context,
 	return nil
 }
 
-func (s *mockAuthStore) RemoveVerificationCodeByID(ctx context.Context, id string) error {
+func (s *mockAuthStore) DeleteVerificationCodeByID(ctx context.Context, id string) error {
 	for i, v := range s.verificationCodes {
 		if v.ID == id {
 			s.verificationCodes = append(s.verificationCodes[:i], s.verificationCodes[i+1:]...)

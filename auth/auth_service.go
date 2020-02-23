@@ -27,7 +27,7 @@ func NewService(store Store, tokenAuth *jwtauth.JWTAuth, smsSender phone.SMSSend
 func (as *Service) createNewVerificationCode(ctx context.Context, user *User, phoneNumber string, countryCode string, verificationCodeType string) (*VerificationCode, error) {
 	const op = "auth/service.createNewVerificationCode"
 
-	err := as.store.RemoveVerificationCodeByPhoneNumber(ctx, phoneNumber, countryCode)
+	err := as.store.DeleteVerificationCodeByPhoneNumber(ctx, phoneNumber, countryCode)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to remove verification code")
@@ -64,7 +64,7 @@ func (as *Service) consumeVerificationCode(ctx context.Context, verificationID s
 		return nil, errors.Invalid(op, "verification code expired")
 	}
 
-	err = as.store.RemoveVerificationCodeByID(ctx, verificationCode.ID)
+	err = as.store.DeleteVerificationCodeByID(ctx, verificationCode.ID)
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to remove verification code")
