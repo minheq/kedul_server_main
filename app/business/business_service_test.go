@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"testing"
+
+	"github.com/minheq/kedul_server_main/auth"
 )
 
 type mockBusinessStore struct {
@@ -85,7 +87,8 @@ func TestCreateBusinessHappyPath(t *testing.T) {
 }
 
 func TestUpdateBusinessHappyPath(t *testing.T) {
-	business := NewBusiness("2", "business2")
+	currentUser := auth.NewUser("", "")
+	business := NewBusiness(currentUser.ID, "business2")
 
 	err := mockStore.StoreBusiness(context.Background(), business)
 
@@ -95,7 +98,7 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update business", func(t *testing.T) {
-		_, err := businessService.UpdateBusiness(context.Background(), business.ID, "business3", "")
+		_, err := businessService.UpdateBusiness(context.Background(), business.ID, "business3", "", currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -105,7 +108,8 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 }
 
 func TestDeleteBusinessHappyPath(t *testing.T) {
-	business := NewBusiness("3", "business4")
+	currentUser := auth.NewUser("", "")
+	business := NewBusiness(currentUser.ID, "business4")
 
 	err := mockStore.StoreBusiness(context.Background(), business)
 
@@ -115,7 +119,7 @@ func TestDeleteBusinessHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update business", func(t *testing.T) {
-		_, err := businessService.DeleteBusiness(context.Background(), business.ID)
+		_, err := businessService.DeleteBusiness(context.Background(), business.ID, currentUser)
 
 		if err != nil {
 			t.Error(err)
