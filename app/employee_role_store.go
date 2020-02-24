@@ -66,6 +66,8 @@ func (s *employeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) 
 		}
 	}
 
+	employeeRole.Permissions = permissions
+
 	return employeeRole, nil
 }
 
