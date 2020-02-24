@@ -24,10 +24,10 @@ var (
 	permManageEmployeeRole = Permission{ID: "2", Name: "manage_employee_role", Operations: []Operation{opCreateEmployeeRole, opReadEmployeeRole, opUpdateEmployeeRole, opDeleteEmployeeRole}}
 )
 
-var (
-	// Exhaustive list of the above permissions
-	permissionList = []Permission{permManageLocation, permManageEmployeeRole}
-)
+var permissionsTable = map[string]Permission{
+	"1": permManageLocation,
+	"2": permManageEmployeeRole,
+}
 
 type permissionService struct {
 	employeeRoleStore EmployeeRoleStore
@@ -60,24 +60,19 @@ func (p *permissionService) GetEmployeePermissions(ctx context.Context, userID s
 	return employeeRole.Permissions, nil
 }
 
-func getPermissions(employeeRole *EmployeeRole) ([]Permission, error) {
-	const op = "app/getPermissions"
+func getPermissionsByPermissionIDs(permissionIDs []string) ([]Permission, error) {
+	const op = "app/getPermissionsByPermissionIDs"
 
 	permissions := []Permission{}
 
-	for _, permissionID := range employeeRole.PermissionIDs {
-		found := false
+	for _, permissionID := range permissionIDs {
+		permission := permissionsTable[permissionID]
 
-		for _, permission := range permissionList {
-			if permission.ID == permissionID {
-				permissions = append(permissions, permission)
-				found = true
-			}
-		}
-
-		if found == false {
+		if permission.ID == "" {
 			return nil, errors.Unexpected(op, fmt.Errorf("permission for permissionID=%s not found", permissionID), "failed to retrieve permission")
 		}
+
+		permissions = append(permissions, permission)
 	}
 
 	return permissions, nil

@@ -48,7 +48,7 @@ func (s *employeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) 
 		return nil, errors.Wrap(op, err, "database error")
 	}
 
-	permissions, err := getPermissions(employeeRole)
+	permissions, err := getPermissionsByPermissionIDs(employeeRole.PermissionIDs)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to get permissions")

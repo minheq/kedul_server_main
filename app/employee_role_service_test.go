@@ -15,7 +15,7 @@ type mockEmployeeRoleStore struct {
 func (s *mockEmployeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) (*EmployeeRole, error) {
 	for _, employeeRole := range s.employeeRoles {
 		if employeeRole.ID == id {
-			permissions, err := getPermissions(employeeRole)
+			permissions, err := getPermissionsByPermissionIDs(employeeRole.PermissionIDs)
 
 			if err != nil {
 				return nil, fmt.Errorf("failed to get permissions")
