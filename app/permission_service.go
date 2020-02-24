@@ -25,8 +25,8 @@ var (
 )
 
 var permissionsTable = map[string]Permission{
-	"1": permManageLocation,
-	"2": permManageEmployeeRole,
+	permManageLocation.ID:     permManageLocation,
+	permManageEmployeeRole.ID: permManageEmployeeRole,
 }
 
 type permissionService struct {
