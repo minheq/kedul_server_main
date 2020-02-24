@@ -26,7 +26,7 @@ func NewEmployeeRoleStore(db *sql.DB) EmployeeRoleStore {
 
 // GetEmployeeRoleByID gets EmployeeRole by ID
 func (s *employeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) (*EmployeeRole, error) {
-	const op = "app/employeeRoleStore.GetEmployeeRoleByPhoneNumber"
+	const op = "app/employeeRoleStore.GetEmployeeRoleByID"
 
 	query := `
 		SELECT id, location_id, name, permission_ids, created_at, updated_at

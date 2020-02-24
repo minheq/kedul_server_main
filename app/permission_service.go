@@ -13,6 +13,10 @@ var (
 	opReadEmployeeRole   = Operation{Name: "read_employee_role"}
 	opUpdateEmployeeRole = Operation{Name: "update_employee_role"}
 	opDeleteEmployeeRole = Operation{Name: "delete_employee_role"}
+	opCreateEmployee     = Operation{Name: "create_employee"}
+	opReadEmployee       = Operation{Name: "read_employee"}
+	opUpdateEmployee     = Operation{Name: "update_employee"}
+	opDeleteEmployee     = Operation{Name: "delete_employee"}
 )
 
 var (

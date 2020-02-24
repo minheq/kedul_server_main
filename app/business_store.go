@@ -28,7 +28,7 @@ func NewStore(db *sql.DB) BusinessStore {
 
 // GetBusinessByID gets Business by ID
 func (s *businessStore) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
-	const op = "business/businessStore.GetBusinessByPhoneNumber"
+	const op = "app/businessStore.GetBusinessByID"
 
 	query := `
 		SELECT id, user_id, name, profile_image_id, created_at, updated_at
@@ -55,7 +55,7 @@ func (s *businessStore) GetBusinessByID(ctx context.Context, id string) (*Busine
 
 // GetBusinessByName gets Business by name
 func (s *businessStore) GetBusinessByName(ctx context.Context, name string) (*Business, error) {
-	const op = "business/businessStore.GetBusinessByName"
+	const op = "app/businessStore.GetBusinessByName"
 
 	query := `
 		SELECT id, user_id, name, profile_image_id, created_at, updated_at
@@ -82,7 +82,7 @@ func (s *businessStore) GetBusinessByName(ctx context.Context, name string) (*Bu
 
 // StoreBusiness persists Business
 func (s *businessStore) StoreBusiness(ctx context.Context, b *Business) error {
-	const op = "business/businessStore.StoreBusiness"
+	const op = "app/businessStore.StoreBusiness"
 
 	query := `
 		INSERT INTO business (id, user_id, name, profile_image_id, created_at, updated_at)
@@ -100,7 +100,7 @@ func (s *businessStore) StoreBusiness(ctx context.Context, b *Business) error {
 
 // UpdateBusiness updates Business including all fields
 func (s *businessStore) UpdateBusiness(ctx context.Context, b *Business) error {
-	const op = "business/businessStore.UpdateBusiness"
+	const op = "app/businessStore.UpdateBusiness"
 
 	query := `
 		UPDATE business
@@ -119,7 +119,7 @@ func (s *businessStore) UpdateBusiness(ctx context.Context, b *Business) error {
 
 // DeleteBusiness deletes Business
 func (s *businessStore) DeleteBusiness(ctx context.Context, b *Business) error {
-	const op = "business/businessStore.DeleteBusiness"
+	const op = "app/businessStore.DeleteBusiness"
 
 	query := `
 		DELETE FROM business

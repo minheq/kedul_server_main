@@ -26,7 +26,7 @@ func NewLocationStore(db *sql.DB) LocationStore {
 
 // GetLocationByID gets Location by ID
 func (s *locationStore) GetLocationByID(ctx context.Context, id string) (*Location, error) {
-	const op = "location/locationStore.GetLocationByPhoneNumber"
+	const op = "app/locationStore.GetLocationByID"
 
 	query := `
 		SELECT id, business_id, name, profile_image_id, created_at, updated_at
@@ -53,7 +53,7 @@ func (s *locationStore) GetLocationByID(ctx context.Context, id string) (*Locati
 
 // StoreLocation persists Location
 func (s *locationStore) StoreLocation(ctx context.Context, location *Location) error {
-	const op = "location/locationStore.StoreLocation"
+	const op = "app/locationStore.StoreLocation"
 
 	query := `
 		INSERT INTO location (id, business_id, name, profile_image_id, created_at, updated_at)
@@ -71,7 +71,7 @@ func (s *locationStore) StoreLocation(ctx context.Context, location *Location) e
 
 // UpdateLocation updates Location including all fields
 func (s *locationStore) UpdateLocation(ctx context.Context, location *Location) error {
-	const op = "location/locationStore.UpdateLocation"
+	const op = "app/locationStore.UpdateLocation"
 
 	query := `
 		UPDATE location
@@ -90,7 +90,7 @@ func (s *locationStore) UpdateLocation(ctx context.Context, location *Location) 
 
 // DeleteLocation deletes Location
 func (s *locationStore) DeleteLocation(ctx context.Context, location *Location) error {
-	const op = "location/locationStore.DeleteLocation"
+	const op = "app/locationStore.DeleteLocation"
 
 	query := `
 		DELETE FROM location
