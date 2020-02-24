@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"testing"
 )
 
@@ -10,9 +11,28 @@ type mockEmployeeRoleStore struct {
 }
 
 func (s *mockEmployeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) (*EmployeeRole, error) {
-	for _, b := range s.employeeRoles {
-		if b.ID == id {
-			return b, nil
+	for _, employeeRole := range s.employeeRoles {
+		if employeeRole.ID == id {
+			permissions := []Permission{}
+
+			for _, permissionID := range employeeRole.PermissionIDs {
+				found := false
+
+				for _, permission := range permissionList {
+					if permission.ID == id {
+						permissions = append(permissions, permission)
+						found = true
+					}
+				}
+
+				if found == false {
+					return nil, fmt.Errorf("permission for permissionID=%s not found", permissionID)
+				}
+			}
+
+			employeeRole.Permissions = permissions
+
+			return employeeRole, nil
 		}
 	}
 
