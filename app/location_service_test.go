@@ -47,21 +47,13 @@ func (s *mockLocationStore) DeleteLocation(ctx context.Context, location *Locati
 	return nil
 }
 
-type mockLocationActor struct{}
-
-func (m *mockLocationActor) can(ctx context.Context, operation Operation) error {
-	return nil
-}
-
-var (
-	testLocationStore   = &mockLocationStore{}
-	testLocationService = NewLocationService(testLocationStore, testEmployeeRoleStore)
-	testLocationActor   = &mockLocationActor{}
-)
-
 func TestCreateLocationHappyPath(t *testing.T) {
+	employeeRoleStore := &mockEmployeeRoleStore{}
+	locationStore := &mockLocationStore{}
+	locationService := NewLocationService(locationStore, employeeRoleStore)
+
 	t.Run("should create location", func(t *testing.T) {
-		_, err := testLocationService.CreateLocation(context.Background(), "1", "location1")
+		_, err := locationService.CreateLocation(context.Background(), "1", "location1")
 
 		if err != nil {
 			t.Error(err)
@@ -71,10 +63,15 @@ func TestCreateLocationHappyPath(t *testing.T) {
 }
 
 func TestUpdateLocationHappyPath(t *testing.T) {
+	employeeRoleStore := &mockEmployeeRoleStore{}
+	locationStore := &mockLocationStore{}
+	locationService := NewLocationService(locationStore, employeeRoleStore)
+	actor := &mockActor{}
+
 	business := NewBusiness("", "business1")
 	location := NewLocation(business.ID, "location2")
 
-	err := testLocationStore.StoreLocation(context.Background(), location)
+	err := locationStore.StoreLocation(context.Background(), location)
 
 	if err != nil {
 		t.Error(err)
@@ -82,7 +79,7 @@ func TestUpdateLocationHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update location", func(t *testing.T) {
-		_, err := testLocationService.UpdateLocation(context.Background(), location.ID, "location3", "", testLocationActor)
+		_, err := locationService.UpdateLocation(context.Background(), location.ID, "location3", "", actor)
 
 		if err != nil {
 			t.Error(err)
@@ -92,10 +89,13 @@ func TestUpdateLocationHappyPath(t *testing.T) {
 }
 
 func TestDeleteLocationHappyPath(t *testing.T) {
+	employeeRoleStore := &mockEmployeeRoleStore{}
+	locationStore := &mockLocationStore{}
+	locationService := NewLocationService(locationStore, employeeRoleStore)
 	business := NewBusiness("", "business2")
 	location := NewLocation(business.ID, "location4")
 
-	err := testLocationStore.StoreLocation(context.Background(), location)
+	err := locationStore.StoreLocation(context.Background(), location)
 
 	if err != nil {
 		t.Error(err)
@@ -103,7 +103,7 @@ func TestDeleteLocationHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update location", func(t *testing.T) {
-		_, err := testLocationService.DeleteLocation(context.Background(), location.ID)
+		_, err := locationService.DeleteLocation(context.Background(), location.ID)
 
 		if err != nil {
 			t.Error(err)

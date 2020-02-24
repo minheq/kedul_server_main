@@ -59,14 +59,12 @@ func (s *mockBusinessStore) DeleteBusiness(ctx context.Context, business *Busine
 	return nil
 }
 
-var (
-	testBusinessStore   = &mockBusinessStore{}
-	testBusinessService = NewBusinessService(testBusinessStore)
-)
-
 func TestCreateBusinessHappyPath(t *testing.T) {
+	businessStore := &mockBusinessStore{}
+	businessService := NewBusinessService(businessStore)
+
 	t.Run("should create business", func(t *testing.T) {
-		_, err := testBusinessService.CreateBusiness(context.Background(), "1", "business1")
+		_, err := businessService.CreateBusiness(context.Background(), "1", "business1")
 
 		if err != nil {
 			t.Error(err)
@@ -76,10 +74,13 @@ func TestCreateBusinessHappyPath(t *testing.T) {
 }
 
 func TestUpdateBusinessHappyPath(t *testing.T) {
+	businessStore := &mockBusinessStore{}
+	businessService := NewBusinessService(businessStore)
+
 	currentUser := auth.NewUser("", "")
 	business := NewBusiness(currentUser.ID, "business2")
 
-	err := testBusinessStore.StoreBusiness(context.Background(), business)
+	err := businessStore.StoreBusiness(context.Background(), business)
 
 	if err != nil {
 		t.Error(err)
@@ -87,7 +88,7 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update business", func(t *testing.T) {
-		_, err := testBusinessService.UpdateBusiness(context.Background(), business.ID, "business3", "", currentUser)
+		_, err := businessService.UpdateBusiness(context.Background(), business.ID, "business3", "", currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -97,10 +98,12 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 }
 
 func TestDeleteBusinessHappyPath(t *testing.T) {
+	businessStore := &mockBusinessStore{}
+	businessService := NewBusinessService(businessStore)
 	currentUser := auth.NewUser("", "")
 	business := NewBusiness(currentUser.ID, "business4")
 
-	err := testBusinessStore.StoreBusiness(context.Background(), business)
+	err := businessStore.StoreBusiness(context.Background(), business)
 
 	if err != nil {
 		t.Error(err)
@@ -108,7 +111,7 @@ func TestDeleteBusinessHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update business", func(t *testing.T) {
-		_, err := testBusinessService.DeleteBusiness(context.Background(), business.ID, currentUser)
+		_, err := businessService.DeleteBusiness(context.Background(), business.ID, currentUser)
 
 		if err != nil {
 			t.Error(err)

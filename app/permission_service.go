@@ -2,6 +2,9 @@ package app
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/minheq/kedul_server_main/errors"
 )
 
 var (
@@ -22,18 +25,45 @@ var (
 	permissionList = []Permission{permManageLocation, permManageEmployeeRole}
 )
 
-// Actor is the current caller. It can be a user or API key or anything that is allowed to interact with our API
-type Actor interface {
-	can(ctx context.Context, operation Operation) error
+type permissionService struct {
+	employeeRoleStore EmployeeRoleStore
 }
 
-type actor struct{}
+func (p *permissionService) GetEmployeePermissions(ctx context.Context, employeeRoleID string) ([]Permission, error) {
+	const op = "app/permissionService.GetEmployeePermissions"
 
-func (a *actor) can(ctx context.Context, operation Operation) error {
-	const op = "app/actor.can"
-	// get current employee based on locationID + userID
-	// get his employee role's permissions
-	// find a match in the list of operations the permissions allow
+	employeeRole, err := p.employeeRoleStore.GetEmployeeRoleByID(ctx, employeeRoleID)
 
-	return nil
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get employee role by id")
+	}
+
+	if employeeRole == nil {
+		return nil, errors.NotFound(op)
+	}
+
+	return employeeRole.Permissions, nil
+}
+
+func getPermissions(employeeRole *EmployeeRole) ([]Permission, error) {
+	const op = "app/getPermissions"
+
+	permissions := []Permission{}
+
+	for _, permissionID := range employeeRole.PermissionIDs {
+		found := false
+
+		for _, permission := range permissionList {
+			if permission.ID == permissionID {
+				permissions = append(permissions, permission)
+				found = true
+			}
+		}
+
+		if found == false {
+			return nil, errors.Unexpected(op, fmt.Errorf("permission for permissionID=%s not found", permissionID), "failed to retrieve permission")
+		}
+	}
+
+	return permissions, nil
 }

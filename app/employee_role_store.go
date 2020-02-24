@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/minheq/kedul_server_main/errors"
 )
@@ -49,21 +48,10 @@ func (s *employeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) 
 		return nil, errors.Wrap(op, err, "database error")
 	}
 
-	permissions := []Permission{}
+	permissions, err := getPermissions(employeeRole)
 
-	for _, permissionID := range employeeRole.PermissionIDs {
-		found := false
-
-		for _, permission := range permissionList {
-			if permission.ID == id {
-				permissions = append(permissions, permission)
-				found = true
-			}
-		}
-
-		if found == false {
-			return nil, errors.Unexpected(op, fmt.Errorf("permission for permissionID=%s not found", permissionID), "failed to retrieve permission")
-		}
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get permissions")
 	}
 
 	employeeRole.Permissions = permissions

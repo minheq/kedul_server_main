@@ -100,14 +100,12 @@ func (s *smsSenderMock) SendSMS(phoneNumber string, countryCode string, text str
 	return nil
 }
 
-var (
-	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
-	ms        = &mockAuthStore{}
-	smsSender = &smsSenderMock{}
-	as        = NewService(ms, tokenAuth, smsSender)
-)
-
 func TestLoginHappyPath(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	var code string
 	var verificationID string
 	var err error
@@ -142,6 +140,11 @@ func TestLoginHappyPath(t *testing.T) {
 }
 
 func TestLoginWithExpiredVerificationCode(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	now := time.Now()
 
 	phoneNumber, _ := phone.FormatPhoneNumber("999999999", "VN")
@@ -183,6 +186,11 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 }
 
 func TestLoginVerifyTwice(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	var codeOne string
 	var verificationIDOne string
 	var codeTwo string
@@ -225,6 +233,11 @@ func TestLoginVerifyTwice(t *testing.T) {
 }
 
 func TestUpdatePhoneNumberHappyPath(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	var code string
 	var verificationID string
 	var err error
@@ -270,6 +283,11 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 }
 
 func TestUpdateUserProfileHappyPath(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	phoneNumber, err := phone.FormatPhoneNumber("999111337", "VN")
 
 	currentUser := NewUser(phoneNumber, "VN")
