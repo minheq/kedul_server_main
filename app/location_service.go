@@ -9,19 +9,19 @@ import (
 
 // LocationService ...
 type LocationService struct {
-	store LocationStore
+	locationStore LocationStore
 }
 
 // NewLocationService constructor for AuthService
-func NewLocationService(store LocationStore) LocationService {
-	return LocationService{store: store}
+func NewLocationService(locationStore LocationStore) LocationService {
+	return LocationService{locationStore: locationStore}
 }
 
 // GetLocationByID ...
 func (s *LocationService) GetLocationByID(ctx context.Context, id string) (*Location, error) {
-	const op = "location/service.CreateLocation"
+	const op = "app/locationService.CreateLocation"
 
-	location, err := s.store.GetLocationByID(ctx, id)
+	location, err := s.locationStore.GetLocationByID(ctx, id)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to get location by id")
@@ -32,24 +32,30 @@ func (s *LocationService) GetLocationByID(ctx context.Context, id string) (*Loca
 
 // CreateLocation creates location
 func (s *LocationService) CreateLocation(ctx context.Context, businessID string, name string) (*Location, error) {
-	const op = "location/service.CreateLocation"
+	const op = "app/locationService.CreateLocation"
 
 	location := NewLocation(businessID, name)
 
-	err := s.store.StoreLocation(ctx, location)
+	err := s.locationStore.StoreLocation(ctx, location)
 
 	if err != nil {
-		return nil, errors.Wrap(op, err, "failed to store location")
+		return nil, errors.Wrap(op, err, "failed to locationStore location")
 	}
 
 	return location, nil
 }
 
 // UpdateLocation updates location
-func (s *LocationService) UpdateLocation(ctx context.Context, id string, name string, profileImageID string) (*Location, error) {
-	const op = "location/service.UpdateLocation"
+func (s *LocationService) UpdateLocation(ctx context.Context, id string, name string, profileImageID string, actor Actor) (*Location, error) {
+	const op = "app/locationService.UpdateLocation"
 
-	location, err := s.store.GetLocationByID(ctx, id)
+	err := actor.can(ctx, opUpdateLocation)
+
+	if err != nil {
+		return nil, errors.Unauthorized(op, err)
+	}
+
+	location, err := s.locationStore.GetLocationByID(ctx, id)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to get location by id")
@@ -63,7 +69,7 @@ func (s *LocationService) UpdateLocation(ctx context.Context, id string, name st
 	location.Name = name
 	location.ProfileImageID = profileImageID
 
-	err = s.store.UpdateLocation(ctx, location)
+	err = s.locationStore.UpdateLocation(ctx, location)
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to update location")
@@ -74,9 +80,9 @@ func (s *LocationService) UpdateLocation(ctx context.Context, id string, name st
 
 // DeleteLocation updates location
 func (s *LocationService) DeleteLocation(ctx context.Context, id string) (*Location, error) {
-	const op = "location/service.DeleteLocation"
+	const op = "app/locationService.DeleteLocation"
 
-	location, err := s.store.GetLocationByID(ctx, id)
+	location, err := s.locationStore.GetLocationByID(ctx, id)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to get location by id")
@@ -86,7 +92,7 @@ func (s *LocationService) DeleteLocation(ctx context.Context, id string) (*Locat
 		return nil, errors.NotFound(op)
 	}
 
-	err = s.store.DeleteLocation(ctx, location)
+	err = s.locationStore.DeleteLocation(ctx, location)
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to update location")

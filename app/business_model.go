@@ -10,7 +10,7 @@ import (
 type Business struct {
 	ID             string    `db:"id"`
 	UserID         string    `db:"user_id"`
-	Name           string    `db:"name"`
+	Name           string    `db:"name",db:"unique"`
 	ProfileImageID string    `db:"profile_image_id"`
 	CreatedAt      time.Time `db:"created_at"`
 	UpdatedAt      time.Time `db:"updated_at"`

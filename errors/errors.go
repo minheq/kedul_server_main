@@ -52,8 +52,8 @@ func Invalid(op string, message string) *Error {
 }
 
 // Unauthorized returns Error with KindUnauthorized
-func Unauthorized(op string) *Error {
-	return &Error{Kind: KindUnauthorized, Op: op}
+func Unauthorized(op string, err error) *Error {
+	return &Error{Kind: KindUnauthorized, Err: err, Op: op}
 }
 
 // NotFound returns Error with KindNotFound

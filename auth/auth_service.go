@@ -228,7 +228,7 @@ func (as *Service) UpdatePhoneNumberCheck(ctx context.Context, verificationID st
 	}
 
 	if currentUser.ID != user.ID {
-		return nil, errors.Unauthorized(op)
+		return nil, errors.Unauthorized(op, fmt.Errorf("current user not owner"))
 	}
 
 	user.UpdatedAt = time.Now()

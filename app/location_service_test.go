@@ -47,9 +47,16 @@ func (s *mockLocationStore) DeleteLocation(ctx context.Context, location *Locati
 	return nil
 }
 
+type mockLocationActor struct{}
+
+func (m *mockLocationActor) can(ctx context.Context, operation Operation) error {
+	return nil
+}
+
 var (
 	testLocationStore   = &mockLocationStore{}
 	testLocationService = NewLocationService(testLocationStore)
+	testLocationActor   = &mockLocationActor{}
 )
 
 func TestCreateLocationHappyPath(t *testing.T) {
@@ -75,7 +82,7 @@ func TestUpdateLocationHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update location", func(t *testing.T) {
-		_, err := testLocationService.UpdateLocation(context.Background(), location.ID, "location3", "")
+		_, err := testLocationService.UpdateLocation(context.Background(), location.ID, "location3", "", testLocationActor)
 
 		if err != nil {
 			t.Error(err)
