@@ -9,13 +9,12 @@ import (
 
 // EmployeeService ...
 type EmployeeService struct {
-	employeeStore     EmployeeStore
-	employeeRoleStore EmployeeRoleStore
+	employeeStore EmployeeStore
 }
 
 // NewEmployeeService constructor for AuthService
-func NewEmployeeService(employeeStore EmployeeStore, employeeRoleStore EmployeeRoleStore) EmployeeService {
-	return EmployeeService{employeeStore: employeeStore, employeeRoleStore: employeeRoleStore}
+func NewEmployeeService(employeeStore EmployeeStore) EmployeeService {
+	return EmployeeService{employeeStore: employeeStore}
 }
 
 // GetEmployeeByID ...
@@ -41,37 +40,6 @@ func (s *EmployeeService) CreateEmployee(ctx context.Context, locationID string,
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to employeeStore employee")
-	}
-
-	ownerRole := NewEmployeeRole(employee.ID, name, defaultOwnerRolePermissions)
-	adminRole := NewEmployeeRole(employee.ID, name, defaultAdminRolePermissions)
-	managerRole := NewEmployeeRole(employee.ID, name, defaultManagerRolePermissions)
-	receptionistRole := NewEmployeeRole(employee.ID, name, defaultReceptionistRolePermissions)
-	specialistRole := NewEmployeeRole(employee.ID, name, defaultSpecialistRolePermissions)
-
-	err = s.employeeRoleStore.StoreEmployeeRole(ctx, ownerRole)
-	if err != nil {
-		return nil, errors.Wrap(op, err, "failed to create default owner role")
-	}
-
-	err = s.employeeRoleStore.StoreEmployeeRole(ctx, adminRole)
-	if err != nil {
-		return nil, errors.Wrap(op, err, "failed to create default admin role")
-	}
-
-	err = s.employeeRoleStore.StoreEmployeeRole(ctx, managerRole)
-	if err != nil {
-		return nil, errors.Wrap(op, err, "failed to create default manager role")
-	}
-
-	err = s.employeeRoleStore.StoreEmployeeRole(ctx, receptionistRole)
-	if err != nil {
-		return nil, errors.Wrap(op, err, "failed to create default receptionist role")
-	}
-
-	err = s.employeeRoleStore.StoreEmployeeRole(ctx, specialistRole)
-	if err != nil {
-		return nil, errors.Wrap(op, err, "failed to create default employee role")
 	}
 
 	return employee, nil
