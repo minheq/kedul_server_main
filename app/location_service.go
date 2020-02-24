@@ -9,12 +9,13 @@ import (
 
 // LocationService ...
 type LocationService struct {
-	locationStore LocationStore
+	locationStore     LocationStore
+	employeeRoleStore EmployeeRoleStore
 }
 
 // NewLocationService constructor for AuthService
-func NewLocationService(locationStore LocationStore) LocationService {
-	return LocationService{locationStore: locationStore}
+func NewLocationService(locationStore LocationStore, employeeRoleStore EmployeeRoleStore) LocationService {
+	return LocationService{locationStore: locationStore, employeeRoleStore: employeeRoleStore}
 }
 
 // GetLocationByID ...
@@ -40,6 +41,37 @@ func (s *LocationService) CreateLocation(ctx context.Context, businessID string,
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to locationStore location")
+	}
+
+	ownerRole := NewEmployeeRole(location.ID, name, defaultOwnerRolePermissions)
+	adminRole := NewEmployeeRole(location.ID, name, defaultAdminRolePermissions)
+	managerRole := NewEmployeeRole(location.ID, name, defaultManagerRolePermissions)
+	receptionistRole := NewEmployeeRole(location.ID, name, defaultReceptionistRolePermissions)
+	specialistRole := NewEmployeeRole(location.ID, name, defaultSpecialistRolePermissions)
+
+	err = s.employeeRoleStore.StoreEmployeeRole(ctx, ownerRole)
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to create default owner role")
+	}
+
+	err = s.employeeRoleStore.StoreEmployeeRole(ctx, adminRole)
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to create default admin role")
+	}
+
+	err = s.employeeRoleStore.StoreEmployeeRole(ctx, managerRole)
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to create default manager role")
+	}
+
+	err = s.employeeRoleStore.StoreEmployeeRole(ctx, receptionistRole)
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to create default receptionist role")
+	}
+
+	err = s.employeeRoleStore.StoreEmployeeRole(ctx, specialistRole)
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to create default employee role")
 	}
 
 	return location, nil

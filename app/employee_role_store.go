@@ -38,11 +38,11 @@ func (s *employeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) 
 
 	row := s.db.QueryRow(query, id)
 
-	err := row.Scan(&employeeRole.ID, &employeeRole.LocationID, &employeeRole.Name, &employeeRole.CreatedAt, &employeeRole.UpdatedAt)
-
-	if err == sql.ErrNoRows {
+	if row == nil {
 		return nil, nil
 	}
+
+	err := row.Scan(&employeeRole.ID, &employeeRole.LocationID, &employeeRole.Name, &employeeRole.CreatedAt, &employeeRole.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")

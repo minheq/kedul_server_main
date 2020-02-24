@@ -38,11 +38,11 @@ func (s *locationStore) GetLocationByID(ctx context.Context, id string) (*Locati
 
 	row := s.db.QueryRow(query, id)
 
-	err := row.Scan(&location.ID, &location.BusinessID, &location.Name, &location.ProfileImageID, &location.CreatedAt, &location.UpdatedAt)
-
-	if err == sql.ErrNoRows {
+	if row == nil {
 		return nil, nil
 	}
+
+	err := row.Scan(&location.ID, &location.BusinessID, &location.Name, &location.ProfileImageID, &location.CreatedAt, &location.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")

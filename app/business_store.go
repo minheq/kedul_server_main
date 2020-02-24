@@ -40,11 +40,11 @@ func (s *businessStore) GetBusinessByID(ctx context.Context, id string) (*Busine
 
 	row := s.db.QueryRow(query, id)
 
-	err := row.Scan(&b.ID, &b.UserID, &b.Name, &b.ProfileImageID, &b.CreatedAt, &b.UpdatedAt)
-
-	if err == sql.ErrNoRows {
+	if row == nil {
 		return nil, nil
 	}
+
+	err := row.Scan(&b.ID, &b.UserID, &b.Name, &b.ProfileImageID, &b.CreatedAt, &b.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")

@@ -125,11 +125,11 @@ func (s *store) GetUserByID(ctx context.Context, id string) (*User, error) {
 
 	row := s.db.QueryRow(query, id)
 
-	err := row.Scan(&user.ID, &user.FullName, &user.PhoneNumber, &user.CountryCode, &user.IsPhoneNumberVerified, &user.CreatedAt, &user.UpdatedAt)
-
-	if err == sql.ErrNoRows {
+	if row == nil {
 		return nil, nil
 	}
+
+	err := row.Scan(&user.ID, &user.FullName, &user.PhoneNumber, &user.CountryCode, &user.IsPhoneNumberVerified, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")

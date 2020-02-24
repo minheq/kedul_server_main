@@ -6,6 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	defaultOwnerRolePermissions        = []Permission{}
+	defaultAdminRolePermissions        = []Permission{}
+	defaultManagerRolePermissions      = []Permission{}
+	defaultReceptionistRolePermissions = []Permission{}
+	defaultSpecialistRolePermissions   = []Permission{}
+)
+
 // EmployeeRole ...
 type EmployeeRole struct {
 	ID          string    `db:"id"`

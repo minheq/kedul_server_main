@@ -55,7 +55,7 @@ func (m *mockLocationActor) can(ctx context.Context, operation Operation) error 
 
 var (
 	testLocationStore   = &mockLocationStore{}
-	testLocationService = NewLocationService(testLocationStore)
+	testLocationService = NewLocationService(testLocationStore, testEmployeeRoleStore)
 	testLocationActor   = &mockLocationActor{}
 )
 
