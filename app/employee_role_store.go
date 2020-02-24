@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/minheq/kedul_server_main/errors"
 )
@@ -29,12 +30,12 @@ func (s *employeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) 
 	const op = "app/employeeRoleStore.GetEmployeeRoleByPhoneNumber"
 
 	query := `
-		SELECT id, business_id, name, profile_image_id, created_at, updated_at
+		SELECT id, location_id, name, permission_ids, created_at, updated_at
 		FROM employee_role
 		WHERE id=$1;
 	`
 
-	var employeeRole EmployeeRole
+	employeeRole := &EmployeeRole{}
 
 	row := s.db.QueryRow(query, id)
 
@@ -42,13 +43,30 @@ func (s *employeeRoleStore) GetEmployeeRoleByID(ctx context.Context, id string) 
 		return nil, nil
 	}
 
-	err := row.Scan(&employeeRole.ID, &employeeRole.LocationID, &employeeRole.Name, &employeeRole.CreatedAt, &employeeRole.UpdatedAt)
+	err := row.Scan(&employeeRole.ID, &employeeRole.LocationID, &employeeRole.Name, &employeeRole.PermissionIDs, &employeeRole.CreatedAt, &employeeRole.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")
 	}
 
-	return &employeeRole, nil
+	permissions := []Permission{}
+
+	for _, permissionID := range employeeRole.PermissionIDs {
+		found := false
+
+		for _, permission := range permissionList {
+			if permission.ID == id {
+				permissions = append(permissions, permission)
+				found = true
+			}
+		}
+
+		if found == false {
+			return nil, errors.Unexpected(op, fmt.Errorf("permission for permissionID=%s not found", permissionID), "failed to retrieve permission")
+		}
+	}
+
+	return employeeRole, nil
 }
 
 // StoreEmployeeRole persists EmployeeRole
@@ -56,11 +74,11 @@ func (s *employeeRoleStore) StoreEmployeeRole(ctx context.Context, employeeRole 
 	const op = "app/employeeRoleStore.StoreEmployeeRole"
 
 	query := `
-		INSERT INTO employeeRole (id, business_id, name, profile_image_id, created_at, updated_at)
+		INSERT INTO employeeRole (id, location_id, name, permission_ids, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
-	_, err := s.db.Exec(query, employeeRole.ID, employeeRole.LocationID, employeeRole.Name, employeeRole.CreatedAt, employeeRole.UpdatedAt)
+	_, err := s.db.Exec(query, employeeRole.ID, employeeRole.LocationID, employeeRole.Name, employeeRole.PermissionIDs, employeeRole.CreatedAt, employeeRole.UpdatedAt)
 
 	if err != nil {
 		return errors.Wrap(op, err, "database error")
@@ -75,11 +93,11 @@ func (s *employeeRoleStore) UpdateEmployeeRole(ctx context.Context, employeeRole
 
 	query := `
 		UPDATE employeeRole
-		SET name=$2, profile_image_id=$3, updated_at=$4
+		SET name=$2, permission_ids=$3, updated_at=$4
 		WHERE id=$1;
 	`
 
-	_, err := s.db.Exec(query, employeeRole.ID, employeeRole.Name, employeeRole.UpdatedAt)
+	_, err := s.db.Exec(query, employeeRole.ID, employeeRole.Name, employeeRole.PermissionIDs, employeeRole.UpdatedAt)
 
 	if err != nil {
 		return errors.Wrap(op, err, "database error")

@@ -13,8 +13,13 @@ var (
 )
 
 var (
-	permManageLocation     = Permission{Name: "manage_location", Operations: []Operation{opUpdateLocation}}
-	permManageEmployeeRole = Permission{Name: "manage_employee_role", Operations: []Operation{opCreateEmployeeRole, opReadEmployeeRole, opUpdateEmployeeRole, opDeleteEmployeeRole}}
+	permManageLocation     = Permission{ID: "1", Name: "manage_location", Operations: []Operation{opUpdateLocation}}
+	permManageEmployeeRole = Permission{ID: "2", Name: "manage_employee_role", Operations: []Operation{opCreateEmployeeRole, opReadEmployeeRole, opUpdateEmployeeRole, opDeleteEmployeeRole}}
+)
+
+var (
+	// Exhaustive list of the above permissions
+	permissionList = []Permission{permManageLocation, permManageEmployeeRole}
 )
 
 // Actor is the current caller. It can be a user or API key or anything that is allowed to interact with our API
