@@ -48,7 +48,7 @@ func (s *EmployeeService) CreateEmployee(ctx context.Context, locationID string,
 
 	employee := NewEmployee(locationID, name, employeeRoleID)
 
-	err := s.employeeStore.StoreEmployee(ctx, employee)
+	err = s.employeeStore.StoreEmployee(ctx, employee)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to employeeStore employee")
