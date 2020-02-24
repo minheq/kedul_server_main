@@ -9,10 +9,20 @@ type mockEmployeeStore struct {
 	employees []*Employee
 }
 
+func (s *mockEmployeeStore) GetEmployeeByUserIDAndLocationID(ctx context.Context, userID string, locationID string) (*Employee, error) {
+	for _, e := range s.employees {
+		if e.UserID == userID && e.LocationID == locationID {
+			return e, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func (s *mockEmployeeStore) GetEmployeeByID(ctx context.Context, id string) (*Employee, error) {
-	for _, b := range s.employees {
-		if b.ID == id {
-			return b, nil
+	for _, e := range s.employees {
+		if e.ID == id {
+			return e, nil
 		}
 	}
 
@@ -26,8 +36,8 @@ func (s *mockEmployeeStore) StoreEmployee(ctx context.Context, employee *Employe
 }
 
 func (s *mockEmployeeStore) UpdateEmployee(ctx context.Context, employee *Employee) error {
-	for i, b := range s.employees {
-		if b.ID == employee.ID {
+	for i, e := range s.employees {
+		if e.ID == employee.ID {
 			s.employees[i] = employee
 			break
 		}
@@ -37,8 +47,8 @@ func (s *mockEmployeeStore) UpdateEmployee(ctx context.Context, employee *Employ
 }
 
 func (s *mockEmployeeStore) DeleteEmployee(ctx context.Context, employee *Employee) error {
-	for i, b := range s.employees {
-		if b.ID == employee.ID {
+	for i, e := range s.employees {
+		if e.ID == employee.ID {
 			s.employees = append(s.employees[:i], s.employees[i+1:]...)
 			break
 		}

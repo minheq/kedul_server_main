@@ -131,8 +131,9 @@ func TestDeleteEmployeeRoleHappyPath(t *testing.T) {
 func TestEmployeeRolePermissions(t *testing.T) {
 	location := NewLocation("", "location3")
 	employeeRoleStore := &mockEmployeeRoleStore{}
+	employeeStore := &mockEmployeeStore{}
 	locationStore := &mockLocationStore{}
-	permissionService := &permissionService{employeeRoleStore: employeeRoleStore}
+	permissionService := &permissionService{employeeRoleStore: employeeRoleStore, employeeStore: employeeStore}
 	locationService := NewLocationService(locationStore, employeeRoleStore)
 	employeeRoleService := NewEmployeeRoleService(employeeRoleStore)
 
@@ -146,6 +147,15 @@ func TestEmployeeRolePermissions(t *testing.T) {
 		return
 	}
 
+	employee := NewEmployee(location.ID, "employee1", employeeRole.ID)
+
+	err = employeeStore.StoreEmployee(context.Background(), employee)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	err = locationStore.StoreLocation(context.Background(), location)
 
 	if err != nil {
@@ -153,7 +163,7 @@ func TestEmployeeRolePermissions(t *testing.T) {
 		return
 	}
 
-	permissions, err = permissionService.GetEmployeePermissions(context.Background(), employeeRole.ID)
+	permissions, err = permissionService.GetEmployeePermissions(context.Background(), employee.UserID, employee.LocationID)
 
 	if err != nil {
 		t.Error(err)

@@ -11,6 +11,7 @@ type Employee struct {
 	ID             string    `db:"id"`
 	LocationID     string    `db:"location_id"`
 	Name           string    `db:"name"`
+	UserID         string    `db:"user_id"`
 	ProfileImageID string    `db:"profile_image_id"`
 	EmployeeRoleID string    `db:"employee_role_id"`
 	CreatedAt      time.Time `db:"created_at"`

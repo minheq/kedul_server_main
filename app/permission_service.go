@@ -31,18 +31,29 @@ var (
 
 type permissionService struct {
 	employeeRoleStore EmployeeRoleStore
+	employeeStore     EmployeeStore
 }
 
-func (p *permissionService) GetEmployeePermissions(ctx context.Context, employeeRoleID string) ([]Permission, error) {
+func (p *permissionService) GetEmployeePermissions(ctx context.Context, userID string, locationID string) ([]Permission, error) {
 	const op = "app/permissionService.GetEmployeePermissions"
 
-	employeeRole, err := p.employeeRoleStore.GetEmployeeRoleByID(ctx, employeeRoleID)
+	employee, err := p.employeeStore.GetEmployeeByUserIDAndLocationID(ctx, userID, locationID)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to get employee role by id")
 	}
 
-	if employeeRole == nil {
+	if employee == nil {
+		return nil, errors.NotFound(op)
+	}
+
+	employeeRole, err := p.employeeRoleStore.GetEmployeeRoleByID(ctx, employee.EmployeeRoleID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get employee role by id")
+	}
+
+	if employee == nil {
 		return nil, errors.NotFound(op)
 	}
 

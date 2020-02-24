@@ -9,6 +9,7 @@ import (
 
 // EmployeeStore ...
 type EmployeeStore interface {
+	GetEmployeeByUserIDAndLocationID(ctx context.Context, userID string, locationID string) (*Employee, error)
 	GetEmployeeByID(ctx context.Context, id string) (*Employee, error)
 	StoreEmployee(ctx context.Context, employee *Employee) error
 	UpdateEmployee(ctx context.Context, employee *Employee) error
@@ -24,6 +25,34 @@ func NewEmployeeStore(db *sql.DB) EmployeeStore {
 	return &employeeStore{db: db}
 }
 
+// GetEmployeeByUserIDAndLocationID gets Employee by UserID and LocationID
+func (s *employeeStore) GetEmployeeByUserIDAndLocationID(ctx context.Context, userID string, locationID string) (*Employee, error) {
+	const op = "app/employeeStore.GetEmployeeByID"
+
+	query := `
+		SELECT id, location_id, name, profile_image_id, created_at, updated_at
+		FROM employee
+		WHERE user_id=$1
+			AND location_id=$2;
+	`
+
+	employee := &Employee{}
+
+	row := s.db.QueryRow(query, userID, locationID)
+
+	if row == nil {
+		return nil, nil
+	}
+
+	err := row.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "database error")
+	}
+
+	return employee, nil
+}
+
 // GetEmployeeByID gets Employee by ID
 func (s *employeeStore) GetEmployeeByID(ctx context.Context, id string) (*Employee, error) {
 	const op = "app/employeeStore.GetEmployeeByID"
@@ -34,7 +63,7 @@ func (s *employeeStore) GetEmployeeByID(ctx context.Context, id string) (*Employ
 		WHERE id=$1;
 	`
 
-	var employee Employee
+	employee := &Employee{}
 
 	row := s.db.QueryRow(query, id)
 
@@ -48,7 +77,7 @@ func (s *employeeStore) GetEmployeeByID(ctx context.Context, id string) (*Employ
 		return nil, errors.Wrap(op, err, "database error")
 	}
 
-	return &employee, nil
+	return employee, nil
 }
 
 // StoreEmployee persists Employee
