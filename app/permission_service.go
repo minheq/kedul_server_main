@@ -22,11 +22,13 @@ var (
 var (
 	permManageLocation     = Permission{ID: "1", Name: "manage_location", Operations: []Operation{opUpdateLocation}}
 	permManageEmployeeRole = Permission{ID: "2", Name: "manage_employee_role", Operations: []Operation{opCreateEmployeeRole, opReadEmployeeRole, opUpdateEmployeeRole, opDeleteEmployeeRole}}
+	permManageEmployee     = Permission{ID: "3", Name: "manage_employee", Operations: []Operation{opCreateEmployee, opReadEmployee, opUpdateEmployee, opDeleteEmployee}}
 )
 
 var permissionsTable = map[string]Permission{
 	permManageLocation.ID:     permManageLocation,
 	permManageEmployeeRole.ID: permManageEmployeeRole,
+	permManageEmployee.ID:     permManageEmployee,
 }
 
 type permissionService struct {

@@ -20,7 +20,7 @@ func NewLocationService(locationStore LocationStore, employeeRoleStore EmployeeR
 
 // GetLocationByID ...
 func (s *LocationService) GetLocationByID(ctx context.Context, id string) (*Location, error) {
-	const op = "app/locationService.CreateLocation"
+	const op = "app/locationService.GetLocationByID"
 
 	location, err := s.locationStore.GetLocationByID(ctx, id)
 

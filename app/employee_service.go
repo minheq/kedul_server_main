@@ -18,8 +18,14 @@ func NewEmployeeService(employeeStore EmployeeStore) EmployeeService {
 }
 
 // GetEmployeeByID ...
-func (s *EmployeeService) GetEmployeeByID(ctx context.Context, id string) (*Employee, error) {
-	const op = "app/employeeService.CreateEmployee"
+func (s *EmployeeService) GetEmployeeByID(ctx context.Context, id string, actor Actor) (*Employee, error) {
+	const op = "app/employeeService.GetEmployeeByID"
+
+	err := actor.can(ctx, opReadEmployee)
+
+	if err != nil {
+		return nil, errors.Unauthorized(op, err)
+	}
 
 	employee, err := s.employeeStore.GetEmployeeByID(ctx, id)
 
@@ -31,8 +37,14 @@ func (s *EmployeeService) GetEmployeeByID(ctx context.Context, id string) (*Empl
 }
 
 // CreateEmployee creates employee
-func (s *EmployeeService) CreateEmployee(ctx context.Context, locationID string, name string, employeeRoleID string) (*Employee, error) {
+func (s *EmployeeService) CreateEmployee(ctx context.Context, locationID string, name string, employeeRoleID string, actor Actor) (*Employee, error) {
 	const op = "app/employeeService.CreateEmployee"
+
+	err := actor.can(ctx, opCreateEmployee)
+
+	if err != nil {
+		return nil, errors.Unauthorized(op, err)
+	}
 
 	employee := NewEmployee(locationID, name, employeeRoleID)
 
@@ -79,8 +91,14 @@ func (s *EmployeeService) UpdateEmployee(ctx context.Context, id string, name st
 }
 
 // DeleteEmployee updates employee
-func (s *EmployeeService) DeleteEmployee(ctx context.Context, id string) (*Employee, error) {
+func (s *EmployeeService) DeleteEmployee(ctx context.Context, id string, actor Actor) (*Employee, error) {
 	const op = "app/employeeService.DeleteEmployee"
+
+	err := actor.can(ctx, opDeleteEmployee)
+
+	if err != nil {
+		return nil, errors.Unauthorized(op, err)
+	}
 
 	employee, err := s.employeeStore.GetEmployeeByID(ctx, id)
 

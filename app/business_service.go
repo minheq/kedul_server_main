@@ -21,7 +21,7 @@ func NewBusinessService(businessStore BusinessStore) BusinessService {
 
 // GetBusinessByID ...
 func (s *BusinessService) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
-	const op = "app/businessService.CreateBusiness"
+	const op = "app/businessService.GetBusinessByID"
 
 	business, err := s.businessStore.GetBusinessByID(ctx, id)
 

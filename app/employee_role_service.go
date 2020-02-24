@@ -19,7 +19,7 @@ func NewEmployeeRoleService(employeeRoleStore EmployeeRoleStore) EmployeeRoleSer
 
 // GetEmployeeRoleByID ...
 func (s *EmployeeRoleService) GetEmployeeRoleByID(ctx context.Context, id string) (*EmployeeRole, error) {
-	const op = "app/employeeRoleService.CreateEmployeeRole"
+	const op = "app/employeeRoleService.GetEmployeeRoleByID"
 
 	employeeRole, err := s.employeeRoleStore.GetEmployeeRoleByID(ctx, id)
 
