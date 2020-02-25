@@ -22,7 +22,8 @@ type Employee struct {
 
 // EmployeeService ...
 type EmployeeService struct {
-	employeeStore EmployeeStore
+	employeeStore     EmployeeStore
+	employeeRoleStore EmployeeRoleStore
 }
 
 // NewEmployeeService constructor for AuthService
@@ -153,6 +154,20 @@ func (s *EmployeeService) DeleteEmployee(ctx context.Context, id string, actor A
 
 	if employee == nil {
 		return nil, errors.NotFound(op)
+	}
+
+	employeeRole, err := s.employeeRoleStore.GetEmployeeRoleByID(ctx, employee.EmployeeRoleID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get employee role by id")
+	}
+
+	if employeeRole == nil {
+		return nil, errors.NotFound(op)
+	}
+
+	if employeeRole.Name == "owner" {
+		return nil, errors.Invalid(op, "cannot delete user with owner role")
 	}
 
 	err = s.employeeStore.DeleteEmployee(ctx, employee)
