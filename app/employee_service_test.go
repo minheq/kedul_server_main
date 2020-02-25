@@ -71,7 +71,8 @@ func (s *mockEmployeeStore) DeleteEmployee(ctx context.Context, employee *Employ
 
 func TestCreateEmployeeHappyPath(t *testing.T) {
 	employeeStore := &mockEmployeeStore{}
-	employeeService := NewEmployeeService(employeeStore)
+	employeeRoleStore := &mockEmployeeRoleStore{}
+	employeeService := NewEmployeeService(employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 
 	t.Run("should create employee", func(t *testing.T) {
@@ -89,7 +90,8 @@ func TestCreateEmployeeHappyPath(t *testing.T) {
 
 func TestUpdateEmployeeHappyPath(t *testing.T) {
 	employeeStore := &mockEmployeeStore{}
-	employeeService := NewEmployeeService(employeeStore)
+	employeeRoleStore := &mockEmployeeRoleStore{}
+	employeeService := NewEmployeeService(employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 
 	location := &Location{
@@ -124,26 +126,43 @@ func TestUpdateEmployeeHappyPath(t *testing.T) {
 
 func TestDeleteEmployeeHappyPath(t *testing.T) {
 	employeeStore := &mockEmployeeStore{}
-	employeeService := NewEmployeeService(employeeStore)
+	employeeRoleStore := &mockEmployeeRoleStore{}
+	employeeService := NewEmployeeService(employeeStore, employeeRoleStore)
 	location := &Location{
 		ID:   "2",
 		Name: "location2",
 	}
-	employee := &Employee{
-		ID:         "4",
-		LocationID: location.ID,
-		Name:       "employee4",
-	}
-	actor := &mockActor{}
 
-	err := employeeStore.StoreEmployee(context.Background(), employee)
+	employeeRole := &EmployeeRole{
+		ID:            "1",
+		LocationID:    location.ID,
+		Name:          "employee_role1",
+		PermissionIDs: []string{},
+	}
+
+	err := employeeRoleStore.StoreEmployeeRole(context.Background(), employeeRole)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	t.Run("should update employee", func(t *testing.T) {
+	employee := &Employee{
+		ID:             "4",
+		LocationID:     location.ID,
+		Name:           "employee4",
+		EmployeeRoleID: employeeRole.ID,
+	}
+	actor := &mockActor{}
+
+	err = employeeStore.StoreEmployee(context.Background(), employee)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	t.Run("should delete employee", func(t *testing.T) {
 		_, err := employeeService.DeleteEmployee(context.Background(), employee.ID, actor)
 
 		if err != nil {

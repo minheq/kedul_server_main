@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,8 +28,8 @@ type EmployeeService struct {
 }
 
 // NewEmployeeService constructor for AuthService
-func NewEmployeeService(employeeStore EmployeeStore) EmployeeService {
-	return EmployeeService{employeeStore: employeeStore}
+func NewEmployeeService(employeeStore EmployeeStore, employeeRoleStore EmployeeRoleStore) EmployeeService {
+	return EmployeeService{employeeStore: employeeStore, employeeRoleStore: employeeRoleStore}
 }
 
 // GetEmployeeByID ...
@@ -163,7 +164,7 @@ func (s *EmployeeService) DeleteEmployee(ctx context.Context, id string, actor A
 	}
 
 	if employeeRole == nil {
-		return nil, errors.NotFound(op)
+		return nil, errors.Unexpected(op, fmt.Errorf("employee has invalid employeeRoleID=%s", employee.EmployeeRoleID), "employee role not found")
 	}
 
 	if employeeRole.Name == "owner" {
