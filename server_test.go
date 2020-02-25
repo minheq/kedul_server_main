@@ -29,18 +29,21 @@ func (s *smsSenderMock) SendSMS(phoneNumber string, countryCode string, text str
 	return nil
 }
 
-var accessToken = ""
+type testHTTPClient struct {
+	accessToken string
+	server      *server
+}
 
-func post(target string, body interface{}, response interface{}, server *server) error {
+func (t *testHTTPClient) post(target string, body interface{}, response interface{}) error {
 	var b bytes.Buffer
 	json.NewEncoder(&b).Encode(body)
 
 	req := httptest.NewRequest("POST", target, &b)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.accessToken))
 
 	w := httptest.NewRecorder()
-	server.router.ServeHTTP(w, req)
+	t.server.router.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
 		return fmt.Errorf("request error. received %v status code. response body: %v", w.Code, w.Body)
@@ -73,7 +76,7 @@ func setupDB(db *sql.DB) {
 	}
 }
 
-func TestIntegration(t *testing.T) {
+func TestEndToEnd(t *testing.T) {
 	router := chi.NewRouter()
 	log := logger.NewLogger()
 	dbURL := os.Getenv("DATABASE_URL")
@@ -91,13 +94,16 @@ func TestIntegration(t *testing.T) {
 
 	loginVerifyResp := &phoneNumberVerifyResponse{}
 
+	// Auth
+	client := &testHTTPClient{server: server, accessToken: ""}
+
 	t.Run("login verify", func(t *testing.T) {
 		body := phoneNumberVerifyRequest{
 			PhoneNumber: "999999999",
 			CountryCode: "VN",
 		}
 
-		err := post("/auth/login_verify", body, loginVerifyResp, server)
+		err := client.post("/auth/login_verify", body, loginVerifyResp)
 
 		if err != nil {
 			t.Error(err)
@@ -113,9 +119,9 @@ func TestIntegration(t *testing.T) {
 
 		loginCheckResp := &loginCheckResponse{}
 
-		err := post("/auth/login_check", body, loginCheckResp, server)
+		err := client.post("/auth/login_check", body, loginCheckResp)
 
-		accessToken = loginCheckResp.AccessToken
+		client.accessToken = loginCheckResp.AccessToken
 
 		if err != nil {
 			t.Error(err)
@@ -123,6 +129,7 @@ func TestIntegration(t *testing.T) {
 		}
 	})
 
+	// App
 	business := &app.Business{}
 
 	t.Run("create business", func(t *testing.T) {
@@ -130,7 +137,20 @@ func TestIntegration(t *testing.T) {
 			Name: "my business",
 		}
 
-		err := post("/businesses", body, business, server)
+		err := client.post("/businesses", body, business)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	})
+
+	t.Run("update business", func(t *testing.T) {
+		body := updateBusinessRequest{
+			Name: "better business",
+		}
+
+		err := client.post(fmt.Sprintf("/businesses/%s", business.ID), body, business)
 
 		if err != nil {
 			t.Error(err)
