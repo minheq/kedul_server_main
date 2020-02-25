@@ -7,7 +7,11 @@ import (
 )
 
 var (
-	defaultOwnerRolePermissions        = []Permission{}
+	defaultOwnerRolePermissions = []Permission{
+		permManageLocation,
+		permManageEmployeeRole,
+		permManageEmployee,
+	}
 	defaultAdminRolePermissions        = []Permission{}
 	defaultManagerRolePermissions      = []Permission{}
 	defaultReceptionistRolePermissions = []Permission{}

@@ -13,12 +13,13 @@ import (
 type LocationService struct {
 	businessStore     BusinessStore
 	locationStore     LocationStore
+	employeeStore     EmployeeStore
 	employeeRoleStore EmployeeRoleStore
 }
 
 // NewLocationService constructor for AuthService
-func NewLocationService(businessStore BusinessStore, locationStore LocationStore, employeeRoleStore EmployeeRoleStore) LocationService {
-	return LocationService{businessStore: businessStore, locationStore: locationStore, employeeRoleStore: employeeRoleStore}
+func NewLocationService(businessStore BusinessStore, locationStore LocationStore, employeeStore EmployeeStore, employeeRoleStore EmployeeRoleStore) LocationService {
+	return LocationService{businessStore: businessStore, locationStore: locationStore, employeeStore: employeeStore, employeeRoleStore: employeeRoleStore}
 }
 
 // GetLocationByID ...
@@ -93,6 +94,16 @@ func (s *LocationService) CreateLocation(ctx context.Context, businessID string,
 	err = s.employeeRoleStore.StoreEmployeeRole(ctx, specialistRole)
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to create default employee role")
+	}
+
+	owner := NewEmployee(location.ID, currentUser.FullName, ownerRole.ID)
+
+	owner.UserID = currentUser.ID
+
+	err = s.employeeStore.StoreEmployee(ctx, owner)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to create location owner")
 	}
 
 	return location, nil

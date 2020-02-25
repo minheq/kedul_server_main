@@ -189,4 +189,45 @@ func TestEndToEnd(t *testing.T) {
 			t.Error(fmt.Errorf("business name does not match. expected=%s, received=%s", business.Name, resp.Name))
 		}
 	})
+
+	t.Run("create location", func(t *testing.T) {
+		body := createLocationRequest{
+			BusinessID: business.ID,
+			Name:       "my location",
+		}
+
+		err := client.post("/locations", body, location)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	})
+
+	t.Run("update location", func(t *testing.T) {
+		body := updateLocationRequest{
+			Name: "better location",
+		}
+
+		err := client.post(fmt.Sprintf("/locations/%s", location.ID), body, location)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	})
+
+	t.Run("get location", func(t *testing.T) {
+		resp := &app.Location{}
+		err := client.get(fmt.Sprintf("/locations/%s", location.ID), resp)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if resp.Name != location.Name {
+			t.Error(fmt.Errorf("location name does not match. expected=%s, received=%s", location.Name, resp.Name))
+		}
+	})
 }

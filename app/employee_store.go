@@ -65,7 +65,7 @@ func (s *employeeStore) GetEmployeeByUserIDAndLocationID(ctx context.Context, us
 	const op = "app/employeeStore.GetEmployeeByID"
 
 	query := `
-		SELECT id, location_id, name, profile_image_id, created_at, updated_at
+		SELECT id, location_id, name, user_id, employee_role_id, profile_image_id, created_at, updated_at
 		FROM employee
 		WHERE user_id=$1
 			AND location_id=$2;
@@ -79,7 +79,7 @@ func (s *employeeStore) GetEmployeeByUserIDAndLocationID(ctx context.Context, us
 		return nil, nil
 	}
 
-	err := row.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
+	err := row.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.UserID, &employee.EmployeeRoleID, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")
@@ -93,7 +93,7 @@ func (s *employeeStore) GetEmployeeByID(ctx context.Context, id string) (*Employ
 	const op = "app/employeeStore.GetEmployeeByID"
 
 	query := `
-		SELECT id, location_id, name, profile_image_id, created_at, updated_at
+		SELECT id, location_id, name, user_id, employee_role_id, profile_image_id, created_at, updated_at
 		FROM employee
 		WHERE id=$1;
 	`
@@ -106,7 +106,7 @@ func (s *employeeStore) GetEmployeeByID(ctx context.Context, id string) (*Employ
 		return nil, nil
 	}
 
-	err := row.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
+	err := row.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.UserID, &employee.EmployeeRoleID, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")
@@ -120,11 +120,11 @@ func (s *employeeStore) StoreEmployee(ctx context.Context, employee *Employee) e
 	const op = "app/employeeStore.StoreEmployee"
 
 	query := `
-		INSERT INTO employee (id, location_id, name, employee_role_id, profile_image_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO employee (id, location_id, user_id, name, employee_role_id, profile_image_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
-	_, err := s.db.Exec(query, employee.ID, employee.LocationID, employee.Name, employee.EmployeeRoleID, employee.ProfileImageID, employee.CreatedAt, employee.UpdatedAt)
+	_, err := s.db.Exec(query, employee.ID, employee.LocationID, employee.UserID, employee.Name, employee.EmployeeRoleID, employee.ProfileImageID, employee.CreatedAt, employee.UpdatedAt)
 
 	if err != nil {
 		return errors.Wrap(op, err, "database error")
@@ -139,11 +139,11 @@ func (s *employeeStore) UpdateEmployee(ctx context.Context, employee *Employee) 
 
 	query := `
 		UPDATE employee
-		SET name=$2, employee_role_id=$3, profile_image_id=$4, updated_at=$5
+		SET user_id=$2, name=$3, employee_role_id=$4, profile_image_id=$5, updated_at=$6
 		WHERE id=$1;
 	`
 
-	_, err := s.db.Exec(query, employee.ID, employee.Name, employee.EmployeeRoleID, employee.ProfileImageID, employee.UpdatedAt)
+	_, err := s.db.Exec(query, employee.ID, employee.UserID, employee.Name, employee.EmployeeRoleID, employee.ProfileImageID, employee.UpdatedAt)
 
 	if err != nil {
 		return errors.Wrap(op, err, "database error")

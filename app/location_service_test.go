@@ -51,9 +51,10 @@ func (s *mockLocationStore) DeleteLocation(ctx context.Context, location *Locati
 
 func TestCreateLocationHappyPath(t *testing.T) {
 	businessStore := &mockBusinessStore{}
+	employeeStore := &mockEmployeeStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	locationStore := &mockLocationStore{}
-	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
+	locationService := NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 
 	currentUser := auth.NewUser("", "")
 	business := NewBusiness(currentUser.ID, "business1")
@@ -77,9 +78,10 @@ func TestCreateLocationHappyPath(t *testing.T) {
 
 func TestUpdateLocationHappyPath(t *testing.T) {
 	businessStore := &mockBusinessStore{}
+	employeeStore := &mockEmployeeStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	locationStore := &mockLocationStore{}
-	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
+	locationService := NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 
 	business := NewBusiness("", "business1")
@@ -104,9 +106,10 @@ func TestUpdateLocationHappyPath(t *testing.T) {
 
 func TestDeleteLocationHappyPath(t *testing.T) {
 	businessStore := &mockBusinessStore{}
+	employeeStore := &mockEmployeeStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	locationStore := &mockLocationStore{}
-	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
+	locationService := NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 	currentUser := auth.NewUser("", "")
 
 	business := NewBusiness(currentUser.ID, "business2")

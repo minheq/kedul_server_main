@@ -55,7 +55,7 @@ func (s *server) routes() {
 	employeeStore := app.NewEmployeeStore(s.db)
 	employeeRoleStore := app.NewEmployeeRoleStore(s.db)
 	businessService := app.NewBusinessService(businessStore)
-	locationService := app.NewLocationService(businessStore, locationStore, employeeRoleStore)
+	locationService := app.NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 	permissionService := app.NewPermissionService(employeeRoleStore, employeeStore)
 	// employeeService := app.NewEmployeeService(employeeStore)
 	// employeeRoleService := app.NewEmployeeRoleService(employeeStore, employeeRoleStore)
