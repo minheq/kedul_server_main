@@ -54,6 +54,23 @@ func (t *testHTTPClient) post(target string, body interface{}, response interfac
 	return nil
 }
 
+func (t *testHTTPClient) get(target string, response interface{}) error {
+	req := httptest.NewRequest("GET", target, nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.accessToken))
+
+	w := httptest.NewRecorder()
+	t.server.router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		return fmt.Errorf("request error. received %v status code. response body: %v", w.Code, w.Body)
+	}
+
+	json.NewDecoder(w.Body).Decode(response)
+
+	return nil
+}
+
 func setupDB(db *sql.DB) {
 	databaseName := os.Getenv("DATABASE_NAME")
 	driver, _ := postgres.WithInstance(db, &postgres.Config{})
@@ -131,6 +148,7 @@ func TestEndToEnd(t *testing.T) {
 
 	// App
 	business := &app.Business{}
+	location := &app.Location{}
 
 	t.Run("create business", func(t *testing.T) {
 		body := createBusinessRequest{
@@ -158,5 +176,17 @@ func TestEndToEnd(t *testing.T) {
 		}
 	})
 
-	fmt.Printf("%v", business)
+	t.Run("get business", func(t *testing.T) {
+		resp := &app.Business{}
+		err := client.get(fmt.Sprintf("/businesses/%s", business.ID), resp)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if resp.Name != business.Name {
+			t.Error(fmt.Errorf("business name does not match. expected=%s, received=%s", business.Name, resp.Name))
+		}
+	})
 }

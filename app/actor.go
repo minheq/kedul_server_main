@@ -14,6 +14,11 @@ type actor struct {
 	permissions []Permission
 }
 
+// NewActor ...
+func NewActor(permissions []Permission) Actor {
+	return &actor{permissions: permissions}
+}
+
 func (a *actor) can(ctx context.Context, operation Operation) error {
 	const op = "app/actor.can"
 

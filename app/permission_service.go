@@ -31,13 +31,22 @@ var permissionsTable = map[string]Permission{
 	permManageEmployee.ID:     permManageEmployee,
 }
 
-type permissionService struct {
+// PermissionService ...
+type PermissionService struct {
 	employeeRoleStore EmployeeRoleStore
 	employeeStore     EmployeeStore
 }
 
-func (p *permissionService) GetEmployeePermissions(ctx context.Context, userID string, locationID string) ([]Permission, error) {
-	const op = "app/permissionService.GetEmployeePermissions"
+// NewPermissionService constructor for AuthService
+func NewPermissionService(employeeRoleStore EmployeeRoleStore, employeeStore EmployeeStore) PermissionService {
+	return PermissionService{employeeRoleStore: employeeRoleStore, employeeStore: employeeStore}
+}
+
+// GetEmployeeActor ...
+func (p *PermissionService) GetEmployeeActor(ctx context.Context, userID string, locationID string) (Actor, error) {
+	const op = "app/permissionService.GetEmployeeActor"
+
+	permissions := []Permission{}
 
 	employee, err := p.employeeStore.GetEmployeeByUserIDAndLocationID(ctx, userID, locationID)
 
@@ -59,7 +68,15 @@ func (p *permissionService) GetEmployeePermissions(ctx context.Context, userID s
 		return nil, errors.NotFound(op)
 	}
 
-	return employeeRole.Permissions, nil
+	permissions = employeeRole.Permissions
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get actor permissions")
+	}
+
+	actor := NewActor(permissions)
+
+	return actor, nil
 }
 
 func getPermissionsByPermissionIDs(permissionIDs []string) ([]Permission, error) {

@@ -137,7 +137,7 @@ func TestEmployeeRolePermissions(t *testing.T) {
 	businessStore := &mockBusinessStore{}
 	employeeStore := &mockEmployeeStore{}
 	locationStore := &mockLocationStore{}
-	permissionService := &permissionService{employeeRoleStore: employeeRoleStore, employeeStore: employeeStore}
+	permissionService := NewPermissionService(employeeRoleStore, employeeStore)
 	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
 	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 
@@ -167,14 +167,12 @@ func TestEmployeeRolePermissions(t *testing.T) {
 		return
 	}
 
-	permissions, err = permissionService.GetEmployeePermissions(context.Background(), employee.UserID, employee.LocationID)
+	actor, err := permissionService.GetEmployeeActor(context.Background(), employee.UserID, employee.LocationID)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
-
-	actor := &actor{permissions: permissions}
 
 	t.Run("should not be able to updateEmployeeRole", func(t *testing.T) {
 		_, err = employeeRoleService.DeleteEmployeeRole(context.Background(), employeeRole.ID, actor)

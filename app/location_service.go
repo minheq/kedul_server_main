@@ -22,7 +22,7 @@ func NewLocationService(businessStore BusinessStore, locationStore LocationStore
 }
 
 // GetLocationByID ...
-func (s *LocationService) GetLocationByID(ctx context.Context, id string) (*Location, error) {
+func (s *LocationService) GetLocationByID(ctx context.Context, id string, actor Actor) (*Location, error) {
 	const op = "app/locationService.GetLocationByID"
 
 	location, err := s.locationStore.GetLocationByID(ctx, id)

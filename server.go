@@ -51,11 +51,12 @@ func (s *server) routes() {
 
 	// app
 	businessStore := app.NewBusinessStore(s.db)
-	// locationStore := app.NewLocationStore(s.db)
-	// employeeStore := app.NewEmployeeStore(s.db)
-	// employeeRoleStore := app.NewEmployeeRoleStore(s.db)
+	locationStore := app.NewLocationStore(s.db)
+	employeeStore := app.NewEmployeeStore(s.db)
+	employeeRoleStore := app.NewEmployeeRoleStore(s.db)
 	businessService := app.NewBusinessService(businessStore)
-	// locationService := app.NewLocationService(businessStore, locationStore, employeeRoleStore)
+	locationService := app.NewLocationService(businessStore, locationStore, employeeRoleStore)
+	permissionService := app.NewPermissionService(employeeRoleStore, employeeStore)
 	// employeeService := app.NewEmployeeService(employeeStore)
 	// employeeRoleService := app.NewEmployeeRoleService(employeeStore, employeeRoleStore)
 
@@ -91,8 +92,14 @@ func (s *server) routes() {
 		r.Post("/auth/update_user_profile", s.handleUpdateUserProfile(authService))
 
 		r.Post("/businesses", s.handleCreateBusiness(businessService))
+		r.Get("/businesses/{businessID}", s.handleGetBusiness(businessService))
 		r.Post("/businesses/{businessID}", s.handleUpdateBusiness(businessService))
 		r.Delete("/businesses/{businessID}", s.handleDeleteBusiness(businessService))
+
+		r.Post("/locations", s.handleCreateLocation(locationService))
+		r.Post("/locations/{locationID}", s.handleUpdateLocation(locationService, permissionService))
+		r.Get("/locations/{locationID}", s.handleGetLocation(locationService, permissionService))
+		r.Delete("/locations/{locationID}", s.handleDeleteLocation(locationService))
 	})
 }
 
