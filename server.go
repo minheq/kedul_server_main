@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
+	"github.com/minheq/kedul_server_main/app"
 	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/errors"
 	"github.com/minheq/kedul_server_main/logger"
@@ -43,8 +44,20 @@ func newServer(
 func (s *server) routes() {
 	// dependencies
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+
+	// auth
 	authStore := auth.NewStore(s.db)
 	authService := auth.NewService(authStore, tokenAuth, s.smsSender)
+
+	// app
+	businessStore := app.NewBusinessStore(s.db)
+	// locationStore := app.NewLocationStore(s.db)
+	// employeeStore := app.NewEmployeeStore(s.db)
+	// employeeRoleStore := app.NewEmployeeRoleStore(s.db)
+	businessService := app.NewBusinessService(businessStore)
+	// locationService := app.NewLocationService(businessStore, locationStore, employeeRoleStore)
+	// employeeService := app.NewEmployeeService(employeeStore)
+	// employeeRoleService := app.NewEmployeeRoleService(employeeStore, employeeRoleStore)
 
 	// middlewares
 	s.router.Use(middleware.RequestID)
@@ -76,6 +89,10 @@ func (s *server) routes() {
 		r.Post("/auth/update_phone_number_verify", s.handleUpdatePhoneNumberVerify(authService))
 		r.Post("/auth/update_phone_number_check", s.handleUpdatePhoneNumberCheck(authService))
 		r.Post("/auth/update_user_profile", s.handleUpdateUserProfile(authService))
+
+		r.Post("/businesses", s.handleCreateBusiness(businessService))
+		r.Post("/businesses/{businessID}", s.handleUpdateBusiness(businessService))
+		r.Delete("/businesses/{businessID}", s.handleDeleteBusiness(businessService))
 	})
 }
 

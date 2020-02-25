@@ -4,8 +4,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
+	"github.com/minheq/kedul_server_main/app"
 	"github.com/minheq/kedul_server_main/auth"
+	"github.com/minheq/kedul_server_main/errors"
 )
 
 type phoneNumberVerifyRequest struct {
@@ -54,11 +57,11 @@ func (p *phoneNumberCheckRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type loginVerifyCheckResponse struct {
+type loginCheckResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func (rd *loginVerifyCheckResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (rd *loginCheckResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
@@ -78,7 +81,7 @@ func (s *server) handleLoginCheck(authService auth.Service) http.HandlerFunc {
 			return
 		}
 
-		render.Render(w, r, &loginVerifyCheckResponse{AccessToken: accessToken})
+		render.Render(w, r, &loginCheckResponse{AccessToken: accessToken})
 	}
 }
 
@@ -185,5 +188,116 @@ func (s *server) handleUpdatePhoneNumberCheck(authService auth.Service) http.Han
 		}
 
 		render.Render(w, r, newUserResponse(user))
+	}
+}
+
+type businessResponse struct {
+	ID             string    `json:"id"`
+	UserID         string    `json:"user_id"`
+	Name           string    `json:"name"`
+	ProfileImageID string    `json:"profile_image_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+func newBusinessResponse(business *app.Business) *businessResponse {
+	return &businessResponse{
+		ID:             business.ID,
+		UserID:         business.UserID,
+		Name:           business.Name,
+		ProfileImageID: business.ProfileImageID,
+		CreatedAt:      business.CreatedAt,
+		UpdatedAt:      business.UpdatedAt,
+	}
+}
+
+func (rd *businessResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type createBusinessRequest struct {
+	Name string `json:"name"`
+}
+
+func (p *createBusinessRequest) Bind(r *http.Request) error {
+	return nil
+}
+
+func (s *server) handleCreateBusiness(businessService app.BusinessService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+		data := &createBusinessRequest{}
+
+		if err := render.Bind(r, data); err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		business, err := businessService.CreateBusiness(r.Context(), currentUser.ID, data.Name)
+
+		if err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		render.Render(w, r, newBusinessResponse(business))
+	}
+}
+
+type updateBusinessRequest struct {
+	Name           string `json:"name"`
+	ProfileImageID string `json:"profile_image_id"`
+}
+
+func (p *updateBusinessRequest) Bind(r *http.Request) error {
+	return nil
+}
+
+func (s *server) handleUpdateBusiness(businessService app.BusinessService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "server.handleUpdateBusiness"
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+		data := &updateBusinessRequest{}
+
+		businessID := chi.URLParam(r, "businessID")
+
+		if businessID == "" {
+			s.respondError(w, r, errors.Invalid(op, "missing param"))
+		}
+
+		if err := render.Bind(r, data); err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		business, err := businessService.UpdateBusiness(r.Context(), businessID, data.Name, data.ProfileImageID, currentUser)
+
+		if err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		render.Render(w, r, newBusinessResponse(business))
+	}
+}
+
+func (s *server) handleDeleteBusiness(businessService app.BusinessService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "server.handleDeleteBusiness"
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+		businessID := chi.URLParam(r, "businessID")
+
+		if businessID == "" {
+			s.respondError(w, r, errors.Invalid(op, "missing param"))
+		}
+
+		business, err := businessService.DeleteBusiness(r.Context(), businessID, currentUser)
+
+		if err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		render.Render(w, r, newBusinessResponse(business))
 	}
 }

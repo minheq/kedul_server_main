@@ -22,8 +22,8 @@ type businessStore struct {
 	db *sql.DB
 }
 
-// NewStore ...
-func NewStore(db *sql.DB) BusinessStore {
+// NewBusinessStore ...
+func NewBusinessStore(db *sql.DB) BusinessStore {
 	return &businessStore{db: db}
 }
 
