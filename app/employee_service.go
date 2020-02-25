@@ -4,8 +4,21 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/minheq/kedul_server_main/errors"
 )
+
+// Employee ...
+type Employee struct {
+	ID             string    `json:"id"`
+	LocationID     string    `json:"location_id"`
+	Name           string    `json:"name"`
+	UserID         string    `json:"user_id"`
+	ProfileImageID string    `json:"profile_image_id"`
+	EmployeeRoleID string    `json:"employee_role_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
 
 // EmployeeService ...
 type EmployeeService struct {
@@ -36,8 +49,15 @@ func (s *EmployeeService) GetEmployeeByID(ctx context.Context, id string, actor 
 	return employee, nil
 }
 
+// CreateEmployeeInput ...
+type CreateEmployeeInput struct {
+	LocationID     string `json:"location_id"`
+	Name           string `json:"name"`
+	ProfileImageID string `json:"profile_image_id"`
+}
+
 // CreateEmployee creates employee
-func (s *EmployeeService) CreateEmployee(ctx context.Context, locationID string, name string, employeeRoleID string, actor Actor) (*Employee, error) {
+func (s *EmployeeService) CreateEmployee(ctx context.Context, input *CreateEmployeeInput, actor Actor) (*Employee, error) {
 	const op = "app/employeeService.CreateEmployee"
 
 	err := actor.can(ctx, opCreateEmployee)
@@ -46,7 +66,21 @@ func (s *EmployeeService) CreateEmployee(ctx context.Context, locationID string,
 		return nil, errors.Unauthorized(op, err)
 	}
 
-	employee := NewEmployee(locationID, name, employeeRoleID)
+	now := time.Now()
+	id := uuid.Must(uuid.New(), nil).String()
+
+	if input.Name == "" {
+		return nil, errors.Invalid(op, "name field required")
+	}
+
+	employee := &Employee{
+		ID:             id,
+		LocationID:     input.LocationID,
+		ProfileImageID: input.ProfileImageID,
+		Name:           input.Name,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
 
 	err = s.employeeStore.StoreEmployee(ctx, employee)
 
@@ -57,8 +91,14 @@ func (s *EmployeeService) CreateEmployee(ctx context.Context, locationID string,
 	return employee, nil
 }
 
+// UpdateEmployeeInput ...
+type UpdateEmployeeInput struct {
+	Name           string `json:"name"`
+	ProfileImageID string `json:"profile_image_id"`
+}
+
 // UpdateEmployee updates employee
-func (s *EmployeeService) UpdateEmployee(ctx context.Context, id string, name string, profileImageID string, actor Actor) (*Employee, error) {
+func (s *EmployeeService) UpdateEmployee(ctx context.Context, id string, input *UpdateEmployeeInput, actor Actor) (*Employee, error) {
 	const op = "app/employeeService.UpdateEmployee"
 
 	err := actor.can(ctx, opUpdateEmployee)
@@ -78,8 +118,13 @@ func (s *EmployeeService) UpdateEmployee(ctx context.Context, id string, name st
 	}
 
 	employee.UpdatedAt = time.Now()
-	employee.Name = name
-	employee.ProfileImageID = profileImageID
+
+	if input.Name != "" {
+		employee.Name = input.Name
+	}
+	if input.ProfileImageID != "" {
+		employee.ProfileImageID = input.ProfileImageID
+	}
 
 	err = s.employeeStore.UpdateEmployee(ctx, employee)
 

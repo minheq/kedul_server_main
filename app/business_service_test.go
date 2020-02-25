@@ -76,7 +76,11 @@ func TestCreateBusinessHappyPath(t *testing.T) {
 	businessService := NewBusinessService(businessStore)
 
 	t.Run("should create business", func(t *testing.T) {
-		_, err := businessService.CreateBusiness(context.Background(), "1", "business1")
+		input := &CreateBusinessInput{
+			Name: "business1",
+		}
+
+		_, err := businessService.CreateBusiness(context.Background(), "1", input)
 
 		if err != nil {
 			t.Error(err)
@@ -90,7 +94,11 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 	businessService := NewBusinessService(businessStore)
 
 	currentUser := auth.NewUser("", "")
-	business := NewBusiness(currentUser.ID, "business2")
+	business := &Business{
+		ID:     "1",
+		UserID: currentUser.ID,
+		Name:   "business2",
+	}
 
 	err := businessStore.StoreBusiness(context.Background(), business)
 
@@ -100,7 +108,11 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update business", func(t *testing.T) {
-		_, err := businessService.UpdateBusiness(context.Background(), business.ID, "business3", "", currentUser)
+		input := &UpdateBusinessInput{
+			Name: "new business2",
+		}
+
+		_, err := businessService.UpdateBusiness(context.Background(), business.ID, input, currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -113,7 +125,11 @@ func TestDeleteBusinessHappyPath(t *testing.T) {
 	businessStore := &mockBusinessStore{}
 	businessService := NewBusinessService(businessStore)
 	currentUser := auth.NewUser("", "")
-	business := NewBusiness(currentUser.ID, "business4")
+	business := &Business{
+		ID:     "2",
+		UserID: currentUser.ID,
+		Name:   "business4",
+	}
 
 	err := businessStore.StoreBusiness(context.Background(), business)
 

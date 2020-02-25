@@ -56,8 +56,12 @@ func TestCreateLocationHappyPath(t *testing.T) {
 	locationStore := &mockLocationStore{}
 	locationService := NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 
-	currentUser := auth.NewUser("", "")
-	business := NewBusiness(currentUser.ID, "business1")
+	currentUser := &auth.User{ID: "1"}
+	business := &Business{
+		ID:     "1",
+		UserID: currentUser.ID,
+		Name:   "business1",
+	}
 
 	err := businessStore.StoreBusiness(context.Background(), business)
 
@@ -67,7 +71,11 @@ func TestCreateLocationHappyPath(t *testing.T) {
 	}
 
 	t.Run("should create location", func(t *testing.T) {
-		_, err := locationService.CreateLocation(context.Background(), business.ID, "location1", currentUser)
+		input := &CreateLocationInput{
+			BusinessID: business.ID,
+			Name:       "location1",
+		}
+		_, err := locationService.CreateLocation(context.Background(), input, currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -84,8 +92,14 @@ func TestUpdateLocationHappyPath(t *testing.T) {
 	locationService := NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 
-	business := NewBusiness("", "business1")
-	location := NewLocation(business.ID, "location2")
+	business := &Business{
+		ID:   "1",
+		Name: "business1",
+	}
+	location := &Location{
+		BusinessID: business.ID,
+		Name:       "location2",
+	}
 
 	err := locationStore.StoreLocation(context.Background(), location)
 
@@ -95,7 +109,10 @@ func TestUpdateLocationHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update location", func(t *testing.T) {
-		_, err := locationService.UpdateLocation(context.Background(), location.ID, "location3", "", actor)
+		input := &UpdateLocationInput{
+			Name: "location3",
+		}
+		_, err := locationService.UpdateLocation(context.Background(), location.ID, input, actor)
 
 		if err != nil {
 			t.Error(err)
@@ -110,16 +127,24 @@ func TestDeleteLocationHappyPath(t *testing.T) {
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	locationStore := &mockLocationStore{}
 	locationService := NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
-	currentUser := auth.NewUser("", "")
+	currentUser := &auth.User{ID: "1"}
 
-	business := NewBusiness(currentUser.ID, "business2")
+	business := &Business{
+		ID:     "2",
+		Name:   "business2",
+		UserID: currentUser.ID,
+	}
 	err := businessStore.StoreBusiness(context.Background(), business)
 
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	location := NewLocation(business.ID, "location4")
+
+	location := &Location{
+		BusinessID: business.ID,
+		Name:       "location4",
+	}
 
 	err = locationStore.StoreLocation(context.Background(), location)
 

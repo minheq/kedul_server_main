@@ -5,9 +5,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/errors"
 )
+
+// Business ...
+type Business struct {
+	ID             string    `json:"id"`
+	UserID         string    `json:"user_id"`
+	Name           string    `json:"name"`
+	ProfileImageID string    `json:"profile_image_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
 
 // BusinessService ...
 type BusinessService struct {
@@ -32,21 +43,36 @@ func (s *BusinessService) GetBusinessByID(ctx context.Context, id string) (*Busi
 	return business, nil
 }
 
+// CreateBusinessInput ...
+type CreateBusinessInput struct {
+	Name           string `json:"name"`
+	ProfileImageID string `json:"profile_image_id"`
+}
+
 // CreateBusiness creates business
-func (s *BusinessService) CreateBusiness(ctx context.Context, userID string, name string) (*Business, error) {
+func (s *BusinessService) CreateBusiness(ctx context.Context, userID string, input *CreateBusinessInput) (*Business, error) {
 	const op = "app/businessService.CreateBusiness"
 
-	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, name)
+	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, input.Name)
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to get business by name")
 	}
 
 	if existingBusiness != nil {
-		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", name))
+		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", input.Name))
 	}
 
-	business := NewBusiness(userID, name)
+	now := time.Now()
+
+	business := &Business{
+		ID:             uuid.Must(uuid.New(), nil).String(),
+		UserID:         userID,
+		Name:           input.Name,
+		ProfileImageID: input.ProfileImageID,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
 
 	err = s.businessStore.StoreBusiness(ctx, business)
 
@@ -57,18 +83,24 @@ func (s *BusinessService) CreateBusiness(ctx context.Context, userID string, nam
 	return business, nil
 }
 
+// UpdateBusinessInput ...
+type UpdateBusinessInput struct {
+	Name           string `json:"name"`
+	ProfileImageID string `json:"profile_image_id"`
+}
+
 // UpdateBusiness updates business
-func (s *BusinessService) UpdateBusiness(ctx context.Context, id string, name string, profileImageID string, currentUser *auth.User) (*Business, error) {
+func (s *BusinessService) UpdateBusiness(ctx context.Context, id string, input *UpdateBusinessInput, currentUser *auth.User) (*Business, error) {
 	const op = "app/businessService.UpdateBusiness"
 
-	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, name)
+	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, input.Name)
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to get business by name")
 	}
 
 	if existingBusiness != nil {
-		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", name))
+		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", input.Name))
 	}
 
 	business, err := s.businessStore.GetBusinessByID(ctx, id)
@@ -86,8 +118,13 @@ func (s *BusinessService) UpdateBusiness(ctx context.Context, id string, name st
 	}
 
 	business.UpdatedAt = time.Now()
-	business.Name = name
-	business.ProfileImageID = profileImageID
+
+	if input.Name != "" {
+		business.Name = input.Name
+	}
+	if input.ProfileImageID != "" {
+		business.ProfileImageID = input.ProfileImageID
+	}
 
 	err = s.businessStore.UpdateBusiness(ctx, business)
 

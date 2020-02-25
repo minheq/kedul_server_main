@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -105,5 +106,15 @@ func (s *server) routes() {
 
 func (s *server) respondError(w http.ResponseWriter, r *http.Request, err error) {
 	s.logger.Error((err))
-	_ = render.Render(w, r, errors.NewErrResponse(err))
+	render.Render(w, r, errors.NewErrResponse(err))
+}
+
+func (s *server) respondSuccess(w http.ResponseWriter, r *http.Request, v render.Renderer) {
+	render.Render(w, r, v)
+}
+
+func (s *server) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
+	err := json.NewDecoder(r.Body).Decode(&v)
+
+	return err
 }

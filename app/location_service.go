@@ -5,9 +5,32 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/errors"
 )
+
+var (
+	defaultOwnerRolePermissionIDs = []string{
+		permManageLocation.ID,
+		permManageEmployeeRole.ID,
+		permManageEmployee.ID,
+	}
+	defaultAdminRolePermissionIDs        = []string{}
+	defaultManagerRolePermissionIDs      = []string{}
+	defaultReceptionistRolePermissionIDs = []string{}
+	defaultSpecialistRolePermissionIDs   = []string{}
+)
+
+// Location ...
+type Location struct {
+	ID             string    `json:"id"`
+	BusinessID     string    `json:"business_id"`
+	Name           string    `json:"name"`
+	ProfileImageID string    `json:"profile_image_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
 
 // LocationService ...
 type LocationService struct {
@@ -35,8 +58,15 @@ func (s *LocationService) GetLocationByID(ctx context.Context, id string, actor 
 	return location, nil
 }
 
+// CreateLocationInput ...
+type CreateLocationInput struct {
+	BusinessID     string `json:"business_id"`
+	Name           string `json:"name"`
+	ProfileImageID string `json:"profile_image_id"`
+}
+
 // CreateLocation creates location
-func (s *LocationService) CreateLocation(ctx context.Context, businessID string, name string, currentUser *auth.User) (*Location, error) {
+func (s *LocationService) CreateLocation(ctx context.Context, input *CreateLocationInput, currentUser *auth.User) (*Location, error) {
 	const op = "app/locationService.CreateLocation"
 
 	businesses, err := s.businessStore.GetBusinessesByUserID(ctx, currentUser.ID)
@@ -48,7 +78,7 @@ func (s *LocationService) CreateLocation(ctx context.Context, businessID string,
 	isOwner := false
 
 	for _, business := range businesses {
-		if business.ID == businessID {
+		if business.ID == input.BusinessID {
 			isOwner = true
 		}
 	}
@@ -57,7 +87,15 @@ func (s *LocationService) CreateLocation(ctx context.Context, businessID string,
 		return nil, errors.Unauthorized(op, fmt.Errorf("current user not owner"))
 	}
 
-	location := NewLocation(businessID, name)
+	now := time.Now()
+
+	location := &Location{
+		ID:         uuid.Must(uuid.New(), nil).String(),
+		BusinessID: input.BusinessID,
+		Name:       input.Name,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
 
 	err = s.locationStore.StoreLocation(ctx, location)
 
@@ -65,11 +103,50 @@ func (s *LocationService) CreateLocation(ctx context.Context, businessID string,
 		return nil, errors.Wrap(op, err, "failed to locationStore location")
 	}
 
-	ownerRole := NewEmployeeRole(location.ID, name, defaultOwnerRolePermissions)
-	adminRole := NewEmployeeRole(location.ID, name, defaultAdminRolePermissions)
-	managerRole := NewEmployeeRole(location.ID, name, defaultManagerRolePermissions)
-	receptionistRole := NewEmployeeRole(location.ID, name, defaultReceptionistRolePermissions)
-	specialistRole := NewEmployeeRole(location.ID, name, defaultSpecialistRolePermissions)
+	ownerRole := &EmployeeRole{
+		ID:            uuid.Must(uuid.New(), nil).String(),
+		LocationID:    location.ID,
+		Name:          "admin",
+		PermissionIDs: defaultOwnerRolePermissionIDs,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	adminRole := &EmployeeRole{
+		ID:            uuid.Must(uuid.New(), nil).String(),
+		LocationID:    location.ID,
+		Name:          "admin",
+		PermissionIDs: defaultAdminRolePermissionIDs,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	managerRole := &EmployeeRole{
+		ID:            uuid.Must(uuid.New(), nil).String(),
+		LocationID:    location.ID,
+		Name:          "manager",
+		PermissionIDs: defaultManagerRolePermissionIDs,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	receptionistRole := &EmployeeRole{
+		ID:            uuid.Must(uuid.New(), nil).String(),
+		LocationID:    location.ID,
+		Name:          "receptionist",
+		PermissionIDs: defaultReceptionistRolePermissionIDs,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	specialistRole := &EmployeeRole{
+		ID:            uuid.Must(uuid.New(), nil).String(),
+		LocationID:    location.ID,
+		Name:          "specialist",
+		PermissionIDs: defaultSpecialistRolePermissionIDs,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
 
 	err = s.employeeRoleStore.StoreEmployeeRole(ctx, ownerRole)
 	if err != nil {
@@ -96,9 +173,15 @@ func (s *LocationService) CreateLocation(ctx context.Context, businessID string,
 		return nil, errors.Wrap(op, err, "failed to create default employee role")
 	}
 
-	owner := NewEmployee(location.ID, currentUser.FullName, ownerRole.ID)
-
-	owner.UserID = currentUser.ID
+	owner := &Employee{
+		ID:             uuid.Must(uuid.New(), nil).String(),
+		LocationID:     location.ID,
+		Name:           currentUser.FullName,
+		EmployeeRoleID: ownerRole.ID,
+		UserID:         currentUser.ID,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
 
 	err = s.employeeStore.StoreEmployee(ctx, owner)
 
@@ -109,8 +192,14 @@ func (s *LocationService) CreateLocation(ctx context.Context, businessID string,
 	return location, nil
 }
 
+// UpdateLocationInput ...
+type UpdateLocationInput struct {
+	Name           string `json:"name"`
+	ProfileImageID string `json:"profile_image_id"`
+}
+
 // UpdateLocation updates location
-func (s *LocationService) UpdateLocation(ctx context.Context, id string, name string, profileImageID string, actor Actor) (*Location, error) {
+func (s *LocationService) UpdateLocation(ctx context.Context, id string, input *UpdateLocationInput, actor Actor) (*Location, error) {
 	const op = "app/locationService.UpdateLocation"
 
 	err := actor.can(ctx, opUpdateLocation)
@@ -130,8 +219,12 @@ func (s *LocationService) UpdateLocation(ctx context.Context, id string, name st
 	}
 
 	location.UpdatedAt = time.Now()
-	location.Name = name
-	location.ProfileImageID = profileImageID
+	if input.Name != "" {
+		location.Name = input.Name
+	}
+	if input.ProfileImageID != "" {
+		location.ProfileImageID = input.ProfileImageID
+	}
 
 	err = s.locationStore.UpdateLocation(ctx, location)
 

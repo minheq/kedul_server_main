@@ -71,7 +71,11 @@ func TestCreateEmployeeRoleHappyPath(t *testing.T) {
 	actor := &mockActor{}
 
 	t.Run("should create employee", func(t *testing.T) {
-		_, err := employeeRoleService.CreateEmployeeRole(context.Background(), "location1", "role_name1", []Permission{}, actor)
+		input := &CreateEmployeeRoleInput{
+			Name:          "role_name1",
+			PermissionIDs: []string{},
+		}
+		_, err := employeeRoleService.CreateEmployeeRole(context.Background(), input, actor)
 
 		if err != nil {
 			t.Error(err)
@@ -85,8 +89,15 @@ func TestUpdateEmployeeRoleHappyPath(t *testing.T) {
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 	actor := &mockActor{}
-	location := NewLocation("", "location1")
-	employeeRole := NewEmployeeRole(location.ID, "role_name2", []Permission{})
+	location := &Location{
+		ID:   "1",
+		Name: "location1",
+	}
+	employeeRole := &EmployeeRole{
+		LocationID:    location.ID,
+		Name:          "role_name2",
+		PermissionIDs: []string{},
+	}
 
 	err := employeeRoleStore.StoreEmployeeRole(context.Background(), employeeRole)
 
@@ -96,7 +107,10 @@ func TestUpdateEmployeeRoleHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update employeeRole", func(t *testing.T) {
-		_, err := employeeRoleService.UpdateEmployeeRole(context.Background(), employeeRole.ID, "role_name3", []Permission{}, actor)
+		input := &UpdateEmployeeRoleInput{
+			Name: "role_name3",
+		}
+		_, err := employeeRoleService.UpdateEmployeeRole(context.Background(), employeeRole.ID, input, actor)
 
 		if err != nil {
 			t.Error(err)
@@ -111,8 +125,15 @@ func TestDeleteEmployeeRoleHappyPath(t *testing.T) {
 	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 
-	location := NewLocation("", "location2")
-	employeeRole := NewEmployeeRole(location.ID, "employeeRole4", []Permission{})
+	location := &Location{
+		ID:   "2",
+		Name: "location2",
+	}
+	employeeRole := &EmployeeRole{
+		LocationID:    location.ID,
+		Name:          "role_name4",
+		PermissionIDs: []string{},
+	}
 
 	err := employeeRoleStore.StoreEmployeeRole(context.Background(), employeeRole)
 
@@ -132,17 +153,23 @@ func TestDeleteEmployeeRoleHappyPath(t *testing.T) {
 }
 
 func TestEmployeeRolePermissions(t *testing.T) {
-	location := NewLocation("", "location3")
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	businessStore := &mockBusinessStore{}
 	employeeStore := &mockEmployeeStore{}
 	locationStore := &mockLocationStore{}
 	permissionService := NewPermissionService(employeeRoleStore, employeeStore)
-	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
+	locationService := NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 
-	permissions := []Permission{permManageLocation}
-	employeeRole := NewEmployeeRole(location.ID, "employeeRole4", permissions)
+	location := &Location{
+		ID:   "3",
+		Name: "location3",
+	}
+	employeeRole := &EmployeeRole{
+		LocationID:    location.ID,
+		Name:          "role_name5",
+		PermissionIDs: []string{permManageLocation.ID},
+	}
 
 	err := employeeRoleStore.StoreEmployeeRole(context.Background(), employeeRole)
 
@@ -151,7 +178,11 @@ func TestEmployeeRolePermissions(t *testing.T) {
 		return
 	}
 
-	employee := NewEmployee(location.ID, "employee1", employeeRole.ID)
+	employee := &Employee{
+		LocationID:     location.ID,
+		Name:           "employee1",
+		EmployeeRoleID: employeeRole.ID,
+	}
 
 	err = employeeStore.StoreEmployee(context.Background(), employee)
 
@@ -184,7 +215,10 @@ func TestEmployeeRolePermissions(t *testing.T) {
 	})
 
 	t.Run("should be able to updateLocation", func(t *testing.T) {
-		_, err := locationService.UpdateLocation(context.Background(), location.ID, "name", "profile_image_id", actor)
+		input := &UpdateLocationInput{
+			Name: "new name",
+		}
+		_, err := locationService.UpdateLocation(context.Background(), location.ID, input, actor)
 
 		if err != nil {
 			t.Errorf("updating location should pass")

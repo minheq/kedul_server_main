@@ -151,7 +151,7 @@ func TestEndToEnd(t *testing.T) {
 	location := &app.Location{}
 
 	t.Run("create business", func(t *testing.T) {
-		body := createBusinessRequest{
+		body := &app.CreateBusinessInput{
 			Name: "my business",
 		}
 
@@ -164,7 +164,7 @@ func TestEndToEnd(t *testing.T) {
 	})
 
 	t.Run("update business", func(t *testing.T) {
-		body := updateBusinessRequest{
+		body := &app.UpdateBusinessInput{
 			Name: "better business",
 		}
 
@@ -191,7 +191,7 @@ func TestEndToEnd(t *testing.T) {
 	})
 
 	t.Run("create location", func(t *testing.T) {
-		body := createLocationRequest{
+		body := &app.CreateLocationInput{
 			BusinessID: business.ID,
 			Name:       "my location",
 		}
@@ -205,7 +205,7 @@ func TestEndToEnd(t *testing.T) {
 	})
 
 	t.Run("update location", func(t *testing.T) {
-		body := updateLocationRequest{
+		body := &app.UpdateLocationInput{
 			Name: "better location",
 		}
 

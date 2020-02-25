@@ -5,8 +5,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/minheq/kedul_server_main/errors"
 )
+
+// EmployeeRole ...
+type EmployeeRole struct {
+	ID            string    `json:"id"`
+	LocationID    string    `json:"location_id"`
+	Name          string    `json:"name"`
+	PermissionIDs []string  `json:"permission_ids"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	// These permissions are retrieved in the application code based on PermissionIDs
+	Permissions []Permission
+}
 
 // EmployeeRoleService ...
 type EmployeeRoleService struct {
@@ -32,8 +45,15 @@ func (s *EmployeeRoleService) GetEmployeeRoleByID(ctx context.Context, id string
 	return employeeRole, nil
 }
 
+// CreateEmployeeRoleInput ...
+type CreateEmployeeRoleInput struct {
+	LocationID    string   `db:"location_id"`
+	Name          string   `db:"name"`
+	PermissionIDs []string `db:"permission_ids"`
+}
+
 // CreateEmployeeRole creates employeeRole
-func (s *EmployeeRoleService) CreateEmployeeRole(ctx context.Context, locationID string, name string, permissions []Permission, actor Actor) (*EmployeeRole, error) {
+func (s *EmployeeRoleService) CreateEmployeeRole(ctx context.Context, input *CreateEmployeeRoleInput, actor Actor) (*EmployeeRole, error) {
 	const op = "app/employeeRoleService.CreateEmployeeRole"
 
 	err := actor.can(ctx, opCreateEmployeeRole)
@@ -42,7 +62,31 @@ func (s *EmployeeRoleService) CreateEmployeeRole(ctx context.Context, locationID
 		return nil, errors.Unauthorized(op, err)
 	}
 
-	employeeRole := NewEmployeeRole(locationID, name, permissions)
+	now := time.Now()
+
+	permissions, err := getPermissionsByPermissionIDs(input.PermissionIDs)
+
+	if err != nil {
+		return nil, errors.Unexpected(op, err, "failed to get permissions")
+	}
+
+	if input.Name == "" {
+		return nil, errors.Invalid(op, "name field required")
+	}
+
+	if input.PermissionIDs == nil {
+		return nil, errors.Invalid(op, "permissions field required")
+	}
+
+	employeeRole := &EmployeeRole{
+		ID:            uuid.Must(uuid.New(), nil).String(),
+		LocationID:    input.LocationID,
+		Name:          input.Name,
+		PermissionIDs: input.PermissionIDs,
+		Permissions:   permissions,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
 
 	err = s.employeeRoleStore.StoreEmployeeRole(ctx, employeeRole)
 
@@ -53,8 +97,14 @@ func (s *EmployeeRoleService) CreateEmployeeRole(ctx context.Context, locationID
 	return employeeRole, nil
 }
 
+// UpdateEmployeeRoleInput ...
+type UpdateEmployeeRoleInput struct {
+	Name          string   `db:"name"`
+	PermissionIDs []string `db:"permission_ids"`
+}
+
 // UpdateEmployeeRole updates employeeRole
-func (s *EmployeeRoleService) UpdateEmployeeRole(ctx context.Context, id string, name string, permissions []Permission, actor Actor) (*EmployeeRole, error) {
+func (s *EmployeeRoleService) UpdateEmployeeRole(ctx context.Context, id string, input *UpdateEmployeeRoleInput, actor Actor) (*EmployeeRole, error) {
 	const op = "app/employeeRoleService.UpdateEmployeeRole"
 
 	err := actor.can(ctx, opUpdateEmployeeRole)
@@ -63,11 +113,11 @@ func (s *EmployeeRoleService) UpdateEmployeeRole(ctx context.Context, id string,
 		return nil, errors.Unauthorized(op, err)
 	}
 
-	if name == "owner" {
+	employeeRole, err := s.employeeRoleStore.GetEmployeeRoleByID(ctx, id)
+
+	if employeeRole.Name == "owner" {
 		return nil, errors.Invalid(op, "cannot update owner role")
 	}
-
-	employeeRole, err := s.employeeRoleStore.GetEmployeeRoleByID(ctx, id)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to get employeeRole by id")
@@ -78,8 +128,20 @@ func (s *EmployeeRoleService) UpdateEmployeeRole(ctx context.Context, id string,
 	}
 
 	employeeRole.UpdatedAt = time.Now()
-	employeeRole.Name = name
-	employeeRole.Permissions = permissions
+
+	if input.Name != "" {
+		employeeRole.Name = input.Name
+	}
+	if input.PermissionIDs != nil {
+		employeeRole.PermissionIDs = input.PermissionIDs
+		permissions, err := getPermissionsByPermissionIDs(input.PermissionIDs)
+
+		if err != nil {
+			return nil, errors.Unexpected(op, err, "failed to get permissions")
+		}
+
+		employeeRole.Permissions = permissions
+	}
 
 	err = s.employeeRoleStore.UpdateEmployeeRole(ctx, employeeRole)
 
@@ -117,6 +179,10 @@ func (s *EmployeeRoleService) DeleteEmployeeRole(ctx context.Context, id string,
 	employeesWithTheRole, err := s.employeeStore.GetEmployeesByEmployeeRoleID(ctx, employeeRole.ID)
 
 	if err != nil {
+		return nil, errors.Unexpected(op, err, "failed to get employees by employee role id")
+	}
+
+	if employeesWithTheRole == nil {
 		return nil, errors.Unexpected(op, err, "failed to get employees by employee role id")
 	}
 

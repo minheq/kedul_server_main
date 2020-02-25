@@ -292,8 +292,11 @@ func TestUpdateUserProfileHappyPath(t *testing.T) {
 
 	currentUser := NewUser(phoneNumber, "VN")
 	err = ms.StoreUser(context.Background(), currentUser)
-	newFullName := "new_name"
-	newProfileImageID := "new_profile_image_id"
+
+	input := &UpdateUserProfileInput{
+		FullName:       "new_name",
+		ProfileImageID: "new_profile_image_id",
+	}
 
 	if err != nil {
 		t.Error(err)
@@ -301,18 +304,18 @@ func TestUpdateUserProfileHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update user", func(t *testing.T) {
-		user, err := as.UpdateUserProfile(context.Background(), newFullName, newProfileImageID, currentUser)
+		user, err := as.UpdateUserProfile(context.Background(), input, currentUser)
 
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		if user.FullName != newFullName {
+		if user.FullName != input.FullName {
 			t.Error("user failed to update full name")
 		}
 
-		if user.ProfileImageID != newProfileImageID {
+		if user.ProfileImageID != input.ProfileImageID {
 			t.Error("user failed to update profile image id")
 		}
 	})

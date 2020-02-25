@@ -119,26 +119,18 @@ func (s *server) handleGetCurrentUser(authService auth.Service) http.HandlerFunc
 	}
 }
 
-type updateUserProfileRequest struct {
-	FullName       string `json:"full_name"`
-	ProfileImageID string `json:"image_id"`
-}
-
-func (p *updateUserProfileRequest) Bind(r *http.Request) error {
-	return nil
-}
-
 func (s *server) handleUpdateUserProfile(authService auth.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
-		data := &updateUserProfileRequest{}
 
-		if err := render.Bind(r, data); err != nil {
+		input := &auth.UpdateUserProfileInput{}
+
+		if err := s.decode(w, r, input); err != nil {
 			s.respondError(w, r, err)
 			return
 		}
 
-		user, err := authService.UpdateUserProfile(r.Context(), data.FullName, data.ProfileImageID, currentUser)
+		user, err := authService.UpdateUserProfile(r.Context(), input, currentUser)
 
 		if err != nil {
 			s.respondError(w, r, err)
@@ -236,25 +228,17 @@ func (s *server) handleGetBusiness(businessService app.BusinessService) http.Han
 	}
 }
 
-type createBusinessRequest struct {
-	Name string `json:"name"`
-}
-
-func (p *createBusinessRequest) Bind(r *http.Request) error {
-	return nil
-}
-
 func (s *server) handleCreateBusiness(businessService app.BusinessService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
-		data := &createBusinessRequest{}
+		input := &app.CreateBusinessInput{}
 
-		if err := render.Bind(r, data); err != nil {
+		if err := s.decode(w, r, input); err != nil {
 			s.respondError(w, r, err)
 			return
 		}
 
-		business, err := businessService.CreateBusiness(r.Context(), currentUser.ID, data.Name)
+		business, err := businessService.CreateBusiness(r.Context(), currentUser.ID, input)
 
 		if err != nil {
 			s.respondError(w, r, err)
@@ -265,20 +249,11 @@ func (s *server) handleCreateBusiness(businessService app.BusinessService) http.
 	}
 }
 
-type updateBusinessRequest struct {
-	Name           string `json:"name"`
-	ProfileImageID string `json:"profile_image_id"`
-}
-
-func (p *updateBusinessRequest) Bind(r *http.Request) error {
-	return nil
-}
-
 func (s *server) handleUpdateBusiness(businessService app.BusinessService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server.handleUpdateBusiness"
 		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
-		data := &updateBusinessRequest{}
+		input := &app.UpdateBusinessInput{}
 
 		businessID := chi.URLParam(r, "businessID")
 
@@ -286,12 +261,12 @@ func (s *server) handleUpdateBusiness(businessService app.BusinessService) http.
 			s.respondError(w, r, errors.Invalid(op, "missing param"))
 		}
 
-		if err := render.Bind(r, data); err != nil {
+		if err := s.decode(w, r, input); err != nil {
 			s.respondError(w, r, err)
 			return
 		}
 
-		business, err := businessService.UpdateBusiness(r.Context(), businessID, data.Name, data.ProfileImageID, currentUser)
+		business, err := businessService.UpdateBusiness(r.Context(), businessID, input, currentUser)
 
 		if err != nil {
 			s.respondError(w, r, err)
@@ -376,26 +351,17 @@ func (s *server) handleGetLocation(locationService app.LocationService, permissi
 	}
 }
 
-type createLocationRequest struct {
-	BusinessID string `json:"business_id"`
-	Name       string `json:"name"`
-}
-
-func (p *createLocationRequest) Bind(r *http.Request) error {
-	return nil
-}
-
 func (s *server) handleCreateLocation(locationService app.LocationService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
-		data := &createLocationRequest{}
+		input := &app.CreateLocationInput{}
 
-		if err := render.Bind(r, data); err != nil {
+		if err := s.decode(w, r, input); err != nil {
 			s.respondError(w, r, err)
 			return
 		}
 
-		location, err := locationService.CreateLocation(r.Context(), data.BusinessID, data.Name, currentUser)
+		location, err := locationService.CreateLocation(r.Context(), input, currentUser)
 
 		if err != nil {
 			s.respondError(w, r, err)
@@ -406,20 +372,11 @@ func (s *server) handleCreateLocation(locationService app.LocationService) http.
 	}
 }
 
-type updateLocationRequest struct {
-	Name           string `json:"name"`
-	ProfileImageID string `json:"profile_image_id"`
-}
-
-func (p *updateLocationRequest) Bind(r *http.Request) error {
-	return nil
-}
-
 func (s *server) handleUpdateLocation(locationService app.LocationService, permissionsService app.PermissionService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server.handleUpdateLocation"
 		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
-		data := &updateLocationRequest{}
+		input := &app.UpdateLocationInput{}
 
 		locationID := chi.URLParam(r, "locationID")
 
@@ -427,7 +384,7 @@ func (s *server) handleUpdateLocation(locationService app.LocationService, permi
 			s.respondError(w, r, errors.Invalid(op, "missing param"))
 		}
 
-		if err := render.Bind(r, data); err != nil {
+		if err := s.decode(w, r, input); err != nil {
 			s.respondError(w, r, err)
 			return
 		}
@@ -439,7 +396,7 @@ func (s *server) handleUpdateLocation(locationService app.LocationService, permi
 			return
 		}
 
-		location, err := locationService.UpdateLocation(r.Context(), locationID, data.Name, data.ProfileImageID, actor)
+		location, err := locationService.UpdateLocation(r.Context(), locationID, input, actor)
 
 		if err != nil {
 			s.respondError(w, r, err)

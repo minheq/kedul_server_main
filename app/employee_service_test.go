@@ -75,7 +75,10 @@ func TestCreateEmployeeHappyPath(t *testing.T) {
 	actor := &mockActor{}
 
 	t.Run("should create employee", func(t *testing.T) {
-		_, err := employeeService.CreateEmployee(context.Background(), "1", "employee1", "1", actor)
+		input := &CreateEmployeeInput{
+			Name: "employee1",
+		}
+		_, err := employeeService.CreateEmployee(context.Background(), input, actor)
 
 		if err != nil {
 			t.Error(err)
@@ -89,8 +92,15 @@ func TestUpdateEmployeeHappyPath(t *testing.T) {
 	employeeService := NewEmployeeService(employeeStore)
 	actor := &mockActor{}
 
-	business := NewBusiness("", "business1")
-	employee := NewEmployee(business.ID, "employee2", "1")
+	location := &Location{
+		ID:   "1",
+		Name: "location1",
+	}
+	employee := &Employee{
+		ID:         "1",
+		LocationID: location.ID,
+		Name:       "employee2",
+	}
 
 	err := employeeStore.StoreEmployee(context.Background(), employee)
 
@@ -100,7 +110,10 @@ func TestUpdateEmployeeHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update employee", func(t *testing.T) {
-		_, err := employeeService.UpdateEmployee(context.Background(), employee.ID, "employee3", "", actor)
+		input := &UpdateEmployeeInput{
+			Name: "employee3",
+		}
+		_, err := employeeService.UpdateEmployee(context.Background(), employee.ID, input, actor)
 
 		if err != nil {
 			t.Error(err)
@@ -112,8 +125,15 @@ func TestUpdateEmployeeHappyPath(t *testing.T) {
 func TestDeleteEmployeeHappyPath(t *testing.T) {
 	employeeStore := &mockEmployeeStore{}
 	employeeService := NewEmployeeService(employeeStore)
-	business := NewBusiness("", "business2")
-	employee := NewEmployee(business.ID, "employee4", "1")
+	location := &Location{
+		ID:   "2",
+		Name: "location2",
+	}
+	employee := &Employee{
+		ID:         "4",
+		LocationID: location.ID,
+		Name:       "employee4",
+	}
 	actor := &mockActor{}
 
 	err := employeeStore.StoreEmployee(context.Background(), employee)

@@ -244,8 +244,14 @@ func (as *Service) UpdatePhoneNumberCheck(ctx context.Context, verificationID st
 	return user, nil
 }
 
+// UpdateUserProfileInput ...
+type UpdateUserProfileInput struct {
+	FullName       string `json:"full_name"`
+	ProfileImageID string `json:"image_id"`
+}
+
 // UpdateUserProfile ...
-func (as *Service) UpdateUserProfile(ctx context.Context, fullName string, profileImageID string, currentUser *User) (*User, error) {
+func (as *Service) UpdateUserProfile(ctx context.Context, input *UpdateUserProfileInput, currentUser *User) (*User, error) {
 	const op = "auth/service.UpdatePhoneNumberCheck"
 
 	user, err := as.store.GetUserByID(ctx, currentUser.ID)
@@ -255,8 +261,13 @@ func (as *Service) UpdateUserProfile(ctx context.Context, fullName string, profi
 	}
 
 	user.UpdatedAt = time.Now()
-	user.FullName = fullName
-	user.ProfileImageID = profileImageID
+
+	if input.FullName != "" {
+		user.FullName = input.FullName
+	}
+	if input.ProfileImageID != "" {
+		user.ProfileImageID = input.ProfileImageID
+	}
 
 	err = as.store.UpdateUser(ctx, user)
 
