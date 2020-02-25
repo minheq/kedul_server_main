@@ -9,6 +9,18 @@ type mockEmployeeStore struct {
 	employees []*Employee
 }
 
+func (s *mockEmployeeStore) GetEmployeesByEmployeeRoleID(ctx context.Context, employeeRoleID string) ([]*Employee, error) {
+	employees := make([]*Employee, 0)
+
+	for _, e := range s.employees {
+		if e.EmployeeRoleID == employeeRoleID {
+			employees = append(employees, e)
+		}
+	}
+
+	return employees, nil
+}
+
 func (s *mockEmployeeStore) GetEmployeeByUserIDAndLocationID(ctx context.Context, userID string, locationID string) (*Employee, error) {
 	for _, e := range s.employees {
 		if e.UserID == userID && e.LocationID == locationID {

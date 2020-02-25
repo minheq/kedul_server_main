@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"testing"
+
+	"github.com/minheq/kedul_server_main/auth"
 )
 
 type mockLocationStore struct {
@@ -48,12 +50,23 @@ func (s *mockLocationStore) DeleteLocation(ctx context.Context, location *Locati
 }
 
 func TestCreateLocationHappyPath(t *testing.T) {
+	businessStore := &mockBusinessStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	locationStore := &mockLocationStore{}
-	locationService := NewLocationService(locationStore, employeeRoleStore)
+	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
+
+	currentUser := auth.NewUser("", "")
+	business := NewBusiness(currentUser.ID, "business1")
+
+	err := businessStore.StoreBusiness(context.Background(), business)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	t.Run("should create location", func(t *testing.T) {
-		_, err := locationService.CreateLocation(context.Background(), "1", "location1")
+		_, err := locationService.CreateLocation(context.Background(), business.ID, "location1", currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -63,9 +76,10 @@ func TestCreateLocationHappyPath(t *testing.T) {
 }
 
 func TestUpdateLocationHappyPath(t *testing.T) {
+	businessStore := &mockBusinessStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	locationStore := &mockLocationStore{}
-	locationService := NewLocationService(locationStore, employeeRoleStore)
+	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
 	actor := &mockActor{}
 
 	business := NewBusiness("", "business1")
@@ -89,13 +103,22 @@ func TestUpdateLocationHappyPath(t *testing.T) {
 }
 
 func TestDeleteLocationHappyPath(t *testing.T) {
+	businessStore := &mockBusinessStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
 	locationStore := &mockLocationStore{}
-	locationService := NewLocationService(locationStore, employeeRoleStore)
-	business := NewBusiness("", "business2")
+	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
+	currentUser := auth.NewUser("", "")
+
+	business := NewBusiness(currentUser.ID, "business2")
+	err := businessStore.StoreBusiness(context.Background(), business)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	location := NewLocation(business.ID, "location4")
 
-	err := locationStore.StoreLocation(context.Background(), location)
+	err = locationStore.StoreLocation(context.Background(), location)
 
 	if err != nil {
 		t.Error(err)
@@ -103,7 +126,7 @@ func TestDeleteLocationHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update location", func(t *testing.T) {
-		_, err := locationService.DeleteLocation(context.Background(), location.ID)
+		_, err := locationService.DeleteLocation(context.Background(), location.ID, currentUser)
 
 		if err != nil {
 			t.Error(err)

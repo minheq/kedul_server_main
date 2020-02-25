@@ -65,8 +65,9 @@ func (m *mockActor) can(ctx context.Context, operation Operation) error {
 }
 
 func TestCreateEmployeeRoleHappyPath(t *testing.T) {
+	employeeStore := &mockEmployeeStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
-	employeeRoleService := NewEmployeeRoleService(employeeRoleStore)
+	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 
 	t.Run("should create employee", func(t *testing.T) {
@@ -80,8 +81,9 @@ func TestCreateEmployeeRoleHappyPath(t *testing.T) {
 }
 
 func TestUpdateEmployeeRoleHappyPath(t *testing.T) {
+	employeeStore := &mockEmployeeStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
-	employeeRoleService := NewEmployeeRoleService(employeeRoleStore)
+	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 	location := NewLocation("", "location1")
 	employeeRole := NewEmployeeRole(location.ID, "role_name2", []Permission{})
@@ -104,8 +106,9 @@ func TestUpdateEmployeeRoleHappyPath(t *testing.T) {
 }
 
 func TestDeleteEmployeeRoleHappyPath(t *testing.T) {
+	employeeStore := &mockEmployeeStore{}
 	employeeRoleStore := &mockEmployeeRoleStore{}
-	employeeRoleService := NewEmployeeRoleService(employeeRoleStore)
+	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 	actor := &mockActor{}
 
 	location := NewLocation("", "location2")
@@ -131,11 +134,12 @@ func TestDeleteEmployeeRoleHappyPath(t *testing.T) {
 func TestEmployeeRolePermissions(t *testing.T) {
 	location := NewLocation("", "location3")
 	employeeRoleStore := &mockEmployeeRoleStore{}
+	businessStore := &mockBusinessStore{}
 	employeeStore := &mockEmployeeStore{}
 	locationStore := &mockLocationStore{}
 	permissionService := &permissionService{employeeRoleStore: employeeRoleStore, employeeStore: employeeStore}
-	locationService := NewLocationService(locationStore, employeeRoleStore)
-	employeeRoleService := NewEmployeeRoleService(employeeRoleStore)
+	locationService := NewLocationService(businessStore, locationStore, employeeRoleStore)
+	employeeRoleService := NewEmployeeRoleService(employeeStore, employeeRoleStore)
 
 	permissions := []Permission{permManageLocation}
 	employeeRole := NewEmployeeRole(location.ID, "employeeRole4", permissions)

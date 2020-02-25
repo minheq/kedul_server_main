@@ -11,6 +11,18 @@ type mockBusinessStore struct {
 	businesses []*Business
 }
 
+func (s *mockBusinessStore) GetBusinessesByUserID(ctx context.Context, userID string) ([]*Business, error) {
+	businesses := make([]*Business, 0)
+
+	for _, e := range s.businesses {
+		if e.UserID == userID {
+			businesses = append(businesses, e)
+		}
+	}
+
+	return businesses, nil
+}
+
 func (s *mockBusinessStore) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
 	for _, b := range s.businesses {
 		if b.ID == id {

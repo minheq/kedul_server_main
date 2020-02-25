@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/minheq/kedul_server_main/errors"
@@ -10,11 +11,12 @@ import (
 // EmployeeRoleService ...
 type EmployeeRoleService struct {
 	employeeRoleStore EmployeeRoleStore
+	employeeStore     EmployeeStore
 }
 
 // NewEmployeeRoleService constructor for AuthService
-func NewEmployeeRoleService(employeeRoleStore EmployeeRoleStore) EmployeeRoleService {
-	return EmployeeRoleService{employeeRoleStore: employeeRoleStore}
+func NewEmployeeRoleService(employeeStore EmployeeStore, employeeRoleStore EmployeeRoleStore) EmployeeRoleService {
+	return EmployeeRoleService{employeeStore: employeeStore, employeeRoleStore: employeeRoleStore}
 }
 
 // GetEmployeeRoleByID ...
@@ -102,6 +104,16 @@ func (s *EmployeeRoleService) DeleteEmployeeRole(ctx context.Context, id string,
 
 	if employeeRole == nil {
 		return nil, errors.NotFound(op)
+	}
+
+	employeesWithTheRole, err := s.employeeStore.GetEmployeesByEmployeeRoleID(ctx, employeeRole.ID)
+
+	if err != nil {
+		return nil, errors.Unexpected(op, err, "failed to get employees by employee role id")
+	}
+
+	if len(employeesWithTheRole) > 0 {
+		return nil, errors.Invalid(op, fmt.Sprintf("employees with role=%s still exist. remove them and restart operation", employeeRole.Name))
 	}
 
 	err = s.employeeRoleStore.DeleteEmployeeRole(ctx, employeeRole)

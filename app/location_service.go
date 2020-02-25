@@ -2,20 +2,23 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/errors"
 )
 
 // LocationService ...
 type LocationService struct {
+	businessStore     BusinessStore
 	locationStore     LocationStore
 	employeeRoleStore EmployeeRoleStore
 }
 
 // NewLocationService constructor for AuthService
-func NewLocationService(locationStore LocationStore, employeeRoleStore EmployeeRoleStore) LocationService {
-	return LocationService{locationStore: locationStore, employeeRoleStore: employeeRoleStore}
+func NewLocationService(businessStore BusinessStore, locationStore LocationStore, employeeRoleStore EmployeeRoleStore) LocationService {
+	return LocationService{businessStore: businessStore, locationStore: locationStore, employeeRoleStore: employeeRoleStore}
 }
 
 // GetLocationByID ...
@@ -32,12 +35,30 @@ func (s *LocationService) GetLocationByID(ctx context.Context, id string) (*Loca
 }
 
 // CreateLocation creates location
-func (s *LocationService) CreateLocation(ctx context.Context, businessID string, name string) (*Location, error) {
+func (s *LocationService) CreateLocation(ctx context.Context, businessID string, name string, currentUser *auth.User) (*Location, error) {
 	const op = "app/locationService.CreateLocation"
+
+	businesses, err := s.businessStore.GetBusinessesByUserID(ctx, currentUser.ID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to to get businesses by user id")
+	}
+
+	isOwner := false
+
+	for _, business := range businesses {
+		if business.ID == businessID {
+			isOwner = true
+		}
+	}
+
+	if isOwner == false {
+		return nil, errors.Unauthorized(op, fmt.Errorf("current user not owner"))
+	}
 
 	location := NewLocation(businessID, name)
 
-	err := s.locationStore.StoreLocation(ctx, location)
+	err = s.locationStore.StoreLocation(ctx, location)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "failed to locationStore location")
@@ -111,7 +132,7 @@ func (s *LocationService) UpdateLocation(ctx context.Context, id string, name st
 }
 
 // DeleteLocation updates location
-func (s *LocationService) DeleteLocation(ctx context.Context, id string) (*Location, error) {
+func (s *LocationService) DeleteLocation(ctx context.Context, id string, currentUser *auth.User) (*Location, error) {
 	const op = "app/locationService.DeleteLocation"
 
 	location, err := s.locationStore.GetLocationByID(ctx, id)
@@ -122,6 +143,24 @@ func (s *LocationService) DeleteLocation(ctx context.Context, id string) (*Locat
 
 	if location == nil {
 		return nil, errors.NotFound(op)
+	}
+
+	businesses, err := s.businessStore.GetBusinessesByUserID(ctx, currentUser.ID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to to get businesses by user id")
+	}
+
+	isOwner := false
+
+	for _, business := range businesses {
+		if business.ID == location.BusinessID {
+			isOwner = true
+		}
+	}
+
+	if isOwner == false {
+		return nil, errors.Unauthorized(op, fmt.Errorf("current user not owner"))
 	}
 
 	err = s.locationStore.DeleteLocation(ctx, location)

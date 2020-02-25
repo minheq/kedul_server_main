@@ -9,6 +9,7 @@ import (
 
 // BusinessStore ...
 type BusinessStore interface {
+	GetBusinessesByUserID(ctx context.Context, userID string) ([]*Business, error)
 	GetBusinessByID(ctx context.Context, id string) (*Business, error)
 	GetBusinessByName(ctx context.Context, name string) (*Business, error)
 	StoreBusiness(ctx context.Context, b *Business) error
@@ -26,6 +27,40 @@ func NewStore(db *sql.DB) BusinessStore {
 	return &businessStore{db: db}
 }
 
+// GetBusinessByUserIDAndLocationID gets Business by UserID and LocationID
+func (s *businessStore) GetBusinessesByUserID(ctx context.Context, userID string) ([]*Business, error) {
+	const op = "app/businessStore.GetBusinessesByUserID"
+
+	query := `
+		SELECT id, user_id, name, profile_image_id, created_at, updated_at
+		FROM business
+		WHERE user_id=$1;
+	`
+	businesses := make([]*Business, 0)
+
+	rows, err := s.db.Query(query, userID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "database error")
+	}
+
+	for rows.Next() {
+		business := &Business{}
+
+		_ = rows.Scan(&business.ID, &business.UserID, &business.Name, &business.ProfileImageID, &business.CreatedAt, &business.UpdatedAt)
+
+		businesses = append(businesses, business)
+	}
+
+	err = rows.Err()
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "database error")
+	}
+
+	return businesses, nil
+}
+
 // GetBusinessByID gets Business by ID
 func (s *businessStore) GetBusinessByID(ctx context.Context, id string) (*Business, error) {
 	const op = "app/businessStore.GetBusinessByID"
@@ -36,7 +71,7 @@ func (s *businessStore) GetBusinessByID(ctx context.Context, id string) (*Busine
 		WHERE id=$1;
 	`
 
-	var b Business
+	var business Business
 
 	row := s.db.QueryRow(query, id)
 
@@ -44,13 +79,13 @@ func (s *businessStore) GetBusinessByID(ctx context.Context, id string) (*Busine
 		return nil, nil
 	}
 
-	err := row.Scan(&b.ID, &b.UserID, &b.Name, &b.ProfileImageID, &b.CreatedAt, &b.UpdatedAt)
+	err := row.Scan(&business.ID, &business.UserID, &business.Name, &business.ProfileImageID, &business.CreatedAt, &business.UpdatedAt)
 
 	if err != nil {
 		return nil, errors.Wrap(op, err, "database error")
 	}
 
-	return &b, nil
+	return &business, nil
 }
 
 // GetBusinessByName gets Business by name
