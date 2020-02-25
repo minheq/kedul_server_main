@@ -6,5 +6,5 @@ CREATE TABLE business (
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
   CONSTRAINT "PK_business_1" PRIMARY KEY (id),
-  CONSTRAINT "UN_business_1" UNIQUE (business_name)
+  CONSTRAINT "UN_business_1" UNIQUE (name)
 );
