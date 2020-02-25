@@ -63,6 +63,10 @@ func (s *EmployeeRoleService) UpdateEmployeeRole(ctx context.Context, id string,
 		return nil, errors.Unauthorized(op, err)
 	}
 
+	if name == "owner" {
+		return nil, errors.Invalid(op, "cannot update owner role")
+	}
+
 	employeeRole, err := s.employeeRoleStore.GetEmployeeRoleByID(ctx, id)
 
 	if err != nil {
@@ -104,6 +108,10 @@ func (s *EmployeeRoleService) DeleteEmployeeRole(ctx context.Context, id string,
 
 	if employeeRole == nil {
 		return nil, errors.NotFound(op)
+	}
+
+	if employeeRole.Name == "owner" {
+		return nil, errors.Invalid(op, "cannot delete owner role")
 	}
 
 	employeesWithTheRole, err := s.employeeStore.GetEmployeesByEmployeeRoleID(ctx, employeeRole.ID)
