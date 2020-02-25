@@ -47,13 +47,13 @@ type Error struct {
 }
 
 // Invalid returns Error with KindInvalid
-func Invalid(op string, err error, message string) *Error {
+func Invalid(op string, message string) *Error {
 	return &Error{Kind: KindInvalid, Op: op, Message: message}
 }
 
 // Unauthorized returns Error with KindUnauthorized
-func Unauthorized(op string) *Error {
-	return &Error{Kind: KindUnauthorized, Op: op}
+func Unauthorized(op string, err error) *Error {
+	return &Error{Kind: KindUnauthorized, Err: err, Op: op}
 }
 
 // NotFound returns Error with KindNotFound

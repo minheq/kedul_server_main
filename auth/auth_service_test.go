@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -10,39 +9,109 @@ import (
 	"github.com/google/uuid"
 	"github.com/minheq/kedul_server_main/errors"
 	"github.com/minheq/kedul_server_main/phone"
-	"github.com/minheq/kedul_server_main/testutils"
 )
 
-var (
-	store       Store
-	authService Service
-	smsSender   *testutils.SmsSenderMock
-)
+type mockAuthStore struct {
+	users             []*User
+	verificationCodes []*VerificationCode
+}
 
-func TestMain(m *testing.M) {
-	db, cleanup := testutils.SetupDB()
+func (s *mockAuthStore) GetVerificationCodeByIDAndCode(ctx context.Context, verificationID string, code string) (*VerificationCode, error) {
+	for _, v := range s.verificationCodes {
+		if v.VerificationID == verificationID && v.Code == code {
+			return v, nil
+		}
+	}
 
-	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	return nil, nil
+}
 
-	store = NewStore(db)
-	smsSender = &testutils.SmsSenderMock{}
+func (s *mockAuthStore) StoreVerificationCode(ctx context.Context, vc *VerificationCode) error {
+	s.verificationCodes = append(s.verificationCodes, vc)
 
-	authService = NewService(store, tokenAuth, smsSender)
+	return nil
+}
 
-	code := m.Run()
+func (s *mockAuthStore) DeleteVerificationCodeByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) error {
+	for i, v := range s.verificationCodes {
+		if v.PhoneNumber == phoneNumber && v.CountryCode == countryCode {
+			s.verificationCodes = append(s.verificationCodes[:i], s.verificationCodes[i+1:]...)
+			break
+		}
+	}
 
-	cleanup()
+	return nil
+}
 
-	os.Exit(code)
+func (s *mockAuthStore) DeleteVerificationCodeByID(ctx context.Context, id string) error {
+	for i, v := range s.verificationCodes {
+		if v.ID == id {
+			s.verificationCodes = append(s.verificationCodes[:i], s.verificationCodes[i+1:]...)
+			break
+		}
+	}
+
+	return nil
+}
+
+func (s *mockAuthStore) GetUserByID(ctx context.Context, id string) (*User, error) {
+	for _, u := range s.users {
+		if u.ID == id {
+			return u, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s *mockAuthStore) GetUserByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*User, error) {
+	for _, u := range s.users {
+		if u.PhoneNumber == phoneNumber && u.CountryCode == countryCode {
+			return u, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (s *mockAuthStore) StoreUser(ctx context.Context, user *User) error {
+	s.users = append(s.users, user)
+
+	return nil
+}
+
+func (s *mockAuthStore) UpdateUser(ctx context.Context, user *User) error {
+	for i, u := range s.users {
+		if u.ID == user.ID {
+			s.users[i] = user
+			break
+		}
+	}
+
+	return nil
+}
+
+type smsSenderMock struct {
+	Text string
+}
+
+func (s *smsSenderMock) SendSMS(phoneNumber string, countryCode string, text string) error {
+	s.Text = text
+	return nil
 }
 
 func TestLoginHappyPath(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	var code string
 	var verificationID string
 	var err error
 
 	t.Run("should send code and return verificationID when login start", func(t *testing.T) {
-		verificationID, err = authService.LoginVerify(context.Background(), "999111333", "VN")
+		verificationID, err = as.LoginVerify(context.Background(), "999111333", "VN")
 		code = smsSender.Text
 
 		if err != nil {
@@ -57,7 +126,7 @@ func TestLoginHappyPath(t *testing.T) {
 	})
 
 	t.Run("should return access token when login verified", func(t *testing.T) {
-		accessToken, err := authService.LoginCheck(context.Background(), verificationID, code)
+		accessToken, err := as.LoginCheck(context.Background(), verificationID, code)
 
 		if err != nil {
 			t.Error(err)
@@ -71,12 +140,17 @@ func TestLoginHappyPath(t *testing.T) {
 }
 
 func TestLoginWithExpiredVerificationCode(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	now := time.Now()
 
 	phoneNumber, _ := phone.FormatPhoneNumber("999999999", "VN")
 	user := NewUser(phoneNumber, "VN")
 
-	err := store.StoreUser(context.Background(), user)
+	err := ms.StoreUser(context.Background(), user)
 
 	if err != nil {
 		t.Error(err)
@@ -95,7 +169,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 		CreatedAt:      now,
 	}
 
-	err = store.StoreVerificationCode(context.Background(), expiredVerificationCode)
+	err = ms.StoreVerificationCode(context.Background(), expiredVerificationCode)
 
 	if err != nil {
 		t.Error(err)
@@ -103,7 +177,7 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 	}
 
 	t.Run("should return error when log in verify with expired verification code", func(t *testing.T) {
-		_, err := authService.LoginCheck(context.Background(), expiredVerificationCode.VerificationID, expiredVerificationCode.Code)
+		_, err := as.LoginCheck(context.Background(), expiredVerificationCode.VerificationID, expiredVerificationCode.Code)
 
 		if errors.Is(errors.KindInvalid, err) == false {
 			t.Error("error should be invalid kind")
@@ -112,6 +186,11 @@ func TestLoginWithExpiredVerificationCode(t *testing.T) {
 }
 
 func TestLoginVerifyTwice(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	var codeOne string
 	var verificationIDOne string
 	var codeTwo string
@@ -119,7 +198,7 @@ func TestLoginVerifyTwice(t *testing.T) {
 	var err error
 
 	t.Run("should send code and return verificationID when login start first time", func(t *testing.T) {
-		verificationIDOne, err = authService.LoginVerify(context.Background(), "999111334", "VN")
+		verificationIDOne, err = as.LoginVerify(context.Background(), "999111334", "VN")
 		codeOne = smsSender.Text
 
 		if err != nil {
@@ -134,7 +213,7 @@ func TestLoginVerifyTwice(t *testing.T) {
 
 	// This behaves like "resending"
 	t.Run("should send different code and verificationID when login start second time", func(t *testing.T) {
-		verificationIDTwo, err = authService.LoginVerify(context.Background(), "999111334", "VN")
+		verificationIDTwo, err = as.LoginVerify(context.Background(), "999111334", "VN")
 		codeTwo = smsSender.Text
 
 		if err != nil {
@@ -154,6 +233,11 @@ func TestLoginVerifyTwice(t *testing.T) {
 }
 
 func TestUpdatePhoneNumberHappyPath(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	var code string
 	var verificationID string
 	var err error
@@ -162,7 +246,7 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 	newPhoneNumber, err := phone.FormatPhoneNumber("999111336", "VN")
 
 	currentUser := NewUser(prevPhoneNumber, "VN")
-	err = store.StoreUser(context.Background(), currentUser)
+	err = ms.StoreUser(context.Background(), currentUser)
 
 	if err != nil {
 		t.Error(err)
@@ -170,7 +254,7 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 	}
 
 	t.Run("should send code and return verificationID when login start", func(t *testing.T) {
-		verificationID, err = authService.UpdatePhoneNumberVerify(context.Background(), newPhoneNumber, "VN", currentUser)
+		verificationID, err = as.UpdatePhoneNumberVerify(context.Background(), newPhoneNumber, "VN", currentUser)
 		code = smsSender.Text
 
 		if err != nil {
@@ -185,7 +269,7 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 	})
 
 	t.Run("should return access token when login verified", func(t *testing.T) {
-		user, err := authService.UpdatePhoneNumberCheck(context.Background(), verificationID, code, currentUser)
+		user, err := as.UpdatePhoneNumberCheck(context.Background(), verificationID, code, currentUser)
 
 		if err != nil {
 			t.Error(err)
@@ -199,12 +283,20 @@ func TestUpdatePhoneNumberHappyPath(t *testing.T) {
 }
 
 func TestUpdateUserProfileHappyPath(t *testing.T) {
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	ms := &mockAuthStore{}
+	smsSender := &smsSenderMock{}
+	as := NewService(ms, tokenAuth, smsSender)
+
 	phoneNumber, err := phone.FormatPhoneNumber("999111337", "VN")
 
 	currentUser := NewUser(phoneNumber, "VN")
-	err = store.StoreUser(context.Background(), currentUser)
-	newFullName := "new_name"
-	newProfileImageID := "new_profile_image_id"
+	err = ms.StoreUser(context.Background(), currentUser)
+
+	input := &UpdateUserProfileInput{
+		FullName:       "new_name",
+		ProfileImageID: "new_profile_image_id",
+	}
 
 	if err != nil {
 		t.Error(err)
@@ -212,18 +304,18 @@ func TestUpdateUserProfileHappyPath(t *testing.T) {
 	}
 
 	t.Run("should update user", func(t *testing.T) {
-		user, err := authService.UpdateUserProfile(context.Background(), newFullName, newProfileImageID, currentUser)
+		user, err := as.UpdateUserProfile(context.Background(), input, currentUser)
 
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		if user.FullName != newFullName {
+		if user.FullName != input.FullName {
 			t.Error("user failed to update full name")
 		}
 
-		if user.ProfileImageID != newProfileImageID {
+		if user.ProfileImageID != input.ProfileImageID {
 			t.Error("user failed to update profile image id")
 		}
 	})

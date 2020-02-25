@@ -4,7 +4,7 @@
     "testutils"
   ],
   "go.testEnvVars": {
-    "DATABASE_NAME": "kedul",
+    "DATABASE_NAME": "kedul_test",
     "DATABASE_URL": "postgres://postgres@127.0.0.1:5432/kedul_test?sslmode=disable",
   },
   "go.useLanguageServer": true,

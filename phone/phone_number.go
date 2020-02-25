@@ -11,7 +11,7 @@ func FormatPhoneNumber(phoneNumber string, countryCode string) (string, error) {
 	parsedPhoneNumber, err := phonenumbers.Parse(phoneNumber, countryCode)
 
 	if err != nil {
-		return "", errors.Invalid(op, err, "failed to parse phone number")
+		return "", errors.Wrap(op, err, "failed to parse phone number")
 	}
 
 	formattedPhoneNumber := phonenumbers.Format(parsedPhoneNumber, phonenumbers.NATIONAL)
