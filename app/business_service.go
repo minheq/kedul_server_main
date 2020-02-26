@@ -12,12 +12,12 @@ import (
 
 // Business ...
 type Business struct {
-	ID             string    `json:"id"`
-	UserID         string    `json:"user_id"`
-	Name           string    `json:"name"`
-	ProfileImageID string    `json:"profile_image_id"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID             string
+	UserID         string
+	Name           string
+	ProfileImageID string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // BusinessService ...
@@ -41,6 +41,23 @@ func (s *BusinessService) GetBusinessByID(ctx context.Context, id string) (*Busi
 	}
 
 	return business, nil
+}
+
+// GetBusinessesByUserID ...
+func (s *BusinessService) GetBusinessesByUserID(ctx context.Context, userID string, currentUser *auth.User) ([]*Business, error) {
+	const op = "app/businessService.GetBusinessesByUserID"
+
+	if userID != currentUser.ID {
+		return nil, errors.Unauthorized(op, fmt.Errorf("current user not owner"))
+	}
+
+	businesses, err := s.businessStore.GetBusinessesByUserID(ctx, userID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get businesses by user id")
+	}
+
+	return businesses, nil
 }
 
 // CreateBusinessInput ...

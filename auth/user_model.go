@@ -8,14 +8,14 @@ import (
 
 // User ...
 type User struct {
-	ID                    string    `db:"id"`
-	FullName              string    `db:"full_name"`
-	PhoneNumber           string    `db:"phone_number"`
-	CountryCode           string    `db:"country_code"`
-	ProfileImageID        string    `db:"profile_image_id"`
-	IsPhoneNumberVerified bool      `db:"is_phone_number_verified"`
-	CreatedAt             time.Time `db:"created_at"`
-	UpdatedAt             time.Time `db:"updated_at"`
+	ID                    string
+	FullName              string
+	PhoneNumber           string
+	CountryCode           string
+	ProfileImageID        string
+	IsPhoneNumberVerified bool
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 // NewUser constructor for User
