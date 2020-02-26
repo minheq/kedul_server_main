@@ -55,7 +55,7 @@ func (s *server) routes() {
 	locationStore := app.NewLocationStore(s.db)
 	employeeStore := app.NewEmployeeStore(s.db)
 	employeeRoleStore := app.NewEmployeeRoleStore(s.db)
-	businessService := app.NewBusinessService(businessStore)
+	businessService := app.NewBusinessService(businessStore, locationStore, employeeStore)
 	locationService := app.NewLocationService(businessStore, locationStore, employeeStore, employeeRoleStore)
 	permissionService := app.NewPermissionService(employeeRoleStore, employeeStore)
 	// employeeService := app.NewEmployeeService(employeeStore)
@@ -91,6 +91,8 @@ func (s *server) routes() {
 		r.Post("/auth/update_phone_number_verify", s.handleUpdatePhoneNumberVerify(authService))
 		r.Post("/auth/update_phone_number_check", s.handleUpdatePhoneNumberCheck(authService))
 		r.Post("/auth/update_user_profile", s.handleUpdateUserProfile(authService))
+
+		r.Get("/users/{userID}/businesses", s.handleGetBusinessesByUserID(businessService))
 
 		r.Post("/businesses", s.handleCreateBusiness(businessService))
 		r.Get("/businesses/{businessID}", s.handleGetBusiness(businessService))

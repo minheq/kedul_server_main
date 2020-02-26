@@ -11,6 +11,20 @@ type mockBusinessStore struct {
 	businesses []*Business
 }
 
+func (s *mockBusinessStore) GetBusinessesByIDs(ctx context.Context, ids []string) ([]*Business, error) {
+	businesses := []*Business{}
+
+	for _, l := range s.businesses {
+		for _, id := range ids {
+			if l.ID == id {
+				businesses = append(businesses, l)
+			}
+		}
+	}
+
+	return businesses, nil
+}
+
 func (s *mockBusinessStore) GetBusinessesByUserID(ctx context.Context, userID string) ([]*Business, error) {
 	businesses := make([]*Business, 0)
 
@@ -73,7 +87,9 @@ func (s *mockBusinessStore) DeleteBusiness(ctx context.Context, business *Busine
 
 func TestCreateBusinessHappyPath(t *testing.T) {
 	businessStore := &mockBusinessStore{}
-	businessService := NewBusinessService(businessStore)
+	locationStore := &mockLocationStore{}
+	employeeStore := &mockEmployeeStore{}
+	businessService := NewBusinessService(businessStore, locationStore, employeeStore)
 
 	t.Run("should create business", func(t *testing.T) {
 		input := &CreateBusinessInput{
@@ -91,9 +107,13 @@ func TestCreateBusinessHappyPath(t *testing.T) {
 
 func TestUpdateBusinessHappyPath(t *testing.T) {
 	businessStore := &mockBusinessStore{}
-	businessService := NewBusinessService(businessStore)
+	locationStore := &mockLocationStore{}
+	employeeStore := &mockEmployeeStore{}
+	businessService := NewBusinessService(businessStore, locationStore, employeeStore)
 
-	currentUser := auth.NewUser("", "")
+	currentUser := &auth.User{
+		ID: "1",
+	}
 	business := &Business{
 		ID:     "1",
 		UserID: currentUser.ID,
@@ -123,8 +143,12 @@ func TestUpdateBusinessHappyPath(t *testing.T) {
 
 func TestDeleteBusinessHappyPath(t *testing.T) {
 	businessStore := &mockBusinessStore{}
-	businessService := NewBusinessService(businessStore)
-	currentUser := auth.NewUser("", "")
+	locationStore := &mockLocationStore{}
+	employeeStore := &mockEmployeeStore{}
+	businessService := NewBusinessService(businessStore, locationStore, employeeStore)
+	currentUser := &auth.User{
+		ID: "2",
+	}
 	business := &Business{
 		ID:     "2",
 		UserID: currentUser.ID,

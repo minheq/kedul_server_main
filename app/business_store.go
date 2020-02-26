@@ -3,12 +3,14 @@ package app
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/minheq/kedul_server_main/errors"
 )
 
 // BusinessStore ...
 type BusinessStore interface {
+	GetBusinessesByIDs(ctx context.Context, ids []string) ([]*Business, error)
 	GetBusinessesByUserID(ctx context.Context, userID string) ([]*Business, error)
 	GetBusinessByID(ctx context.Context, id string) (*Business, error)
 	GetBusinessByName(ctx context.Context, name string) (*Business, error)
@@ -27,7 +29,52 @@ func NewBusinessStore(db *sql.DB) BusinessStore {
 	return &businessStore{db: db}
 }
 
-// GetBusinessByUserIDAndLocationID gets Business by UserID and LocationID
+// GetBusinessesByIDs gets Business by UserID and LocationID
+func (s *businessStore) GetBusinessesByIDs(ctx context.Context, ids []string) ([]*Business, error) {
+	const op = "app/businessStore.GetBusinessesByIDs"
+
+	if len(ids) == 0 {
+		return []*Business{}, nil
+	}
+
+	placeholder, args := makeIDsArgs(ids)
+
+	query := fmt.Sprintf(`
+		SELECT id, user_id, name, profile_image_id, created_at, updated_at
+		FROM business
+		WHERE id IN (%s)
+	`, placeholder)
+
+	rows, err := s.db.Query(query, args...)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "database error")
+	}
+
+	businesses := make([]*Business, 0)
+
+	for rows.Next() {
+		business := &Business{}
+
+		err := rows.Scan(&business.ID, &business.UserID, &business.Name, &business.ProfileImageID, &business.CreatedAt, &business.UpdatedAt)
+
+		if err != nil {
+			return nil, errors.Wrap(op, err, "row scan error")
+		}
+
+		businesses = append(businesses, business)
+	}
+
+	err = rows.Err()
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "database error")
+	}
+
+	return businesses, nil
+}
+
+// GetBusinessesByUserID gets Business by UserID and LocationID
 func (s *businessStore) GetBusinessesByUserID(ctx context.Context, userID string) ([]*Business, error) {
 	const op = "app/businessStore.GetBusinessesByUserID"
 
@@ -47,7 +94,11 @@ func (s *businessStore) GetBusinessesByUserID(ctx context.Context, userID string
 	for rows.Next() {
 		business := &Business{}
 
-		_ = rows.Scan(&business.ID, &business.UserID, &business.Name, &business.ProfileImageID, &business.CreatedAt, &business.UpdatedAt)
+		err := rows.Scan(&business.ID, &business.UserID, &business.Name, &business.ProfileImageID, &business.CreatedAt, &business.UpdatedAt)
+
+		if err != nil {
+			return nil, errors.Wrap(op, err, "row scan error")
+		}
 
 		businesses = append(businesses, business)
 	}

@@ -17,6 +17,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/minheq/kedul_server_main/app"
+	"github.com/minheq/kedul_server_main/auth"
 	"github.com/minheq/kedul_server_main/logger"
 )
 
@@ -113,6 +114,7 @@ func TestEndToEnd(t *testing.T) {
 
 	// Auth
 	client := &testHTTPClient{server: server, accessToken: ""}
+	user := &auth.User{}
 
 	t.Run("login verify", func(t *testing.T) {
 		body := phoneNumberVerifyRequest{
@@ -139,6 +141,15 @@ func TestEndToEnd(t *testing.T) {
 		err := client.post("/auth/login_check", body, loginCheckResp)
 
 		client.accessToken = loginCheckResp.AccessToken
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	})
+
+	t.Run("get current user", func(t *testing.T) {
+		err := client.get("/auth/current_user", user)
 
 		if err != nil {
 			t.Error(err)
@@ -187,6 +198,21 @@ func TestEndToEnd(t *testing.T) {
 
 		if resp.Name != business.Name {
 			t.Error(fmt.Errorf("business name does not match. expected=%s, received=%s", business.Name, resp.Name))
+		}
+	})
+
+	t.Run("get user businesses", func(t *testing.T) {
+		resp := &businessListResponse{}
+		err := client.get(fmt.Sprintf("/users/%s/businesses", user.ID), resp)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if len(resp.Data) != 1 {
+			t.Error(fmt.Errorf("there should be 1 business"))
+			return
 		}
 	})
 

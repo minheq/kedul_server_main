@@ -9,6 +9,7 @@ import (
 
 // EmployeeStore ...
 type EmployeeStore interface {
+	GetEmployeesByUserID(ctx context.Context, userID string) ([]*Employee, error)
 	GetEmployeesByEmployeeRoleID(ctx context.Context, employeeRoleID string) ([]*Employee, error)
 	GetEmployeeByUserIDAndLocationID(ctx context.Context, userID string, locationID string) (*Employee, error)
 	GetEmployeeByID(ctx context.Context, id string) (*Employee, error)
@@ -27,13 +28,51 @@ func NewEmployeeStore(db *sql.DB) EmployeeStore {
 }
 
 // GetEmployeeByUserIDAndLocationID gets Employee by UserID and LocationID
+func (s *employeeStore) GetEmployeesByUserID(ctx context.Context, userID string) ([]*Employee, error) {
+	const op = "app/employeeStore.GetEmployeesByUserID"
+
+	query := `
+		SELECT id, location_id, name, user_id, employee_role_id, profile_image_id, created_at, updated_at
+		FROM employee
+		WHERE user_id=$1;
+	`
+	employees := make([]*Employee, 0)
+
+	rows, err := s.db.Query(query, userID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "database error")
+	}
+
+	for rows.Next() {
+		employee := &Employee{}
+
+		err := rows.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.UserID, &employee.EmployeeRoleID, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
+
+		if err != nil {
+			return nil, errors.Wrap(op, err, "row scan error")
+		}
+
+		employees = append(employees, employee)
+	}
+
+	err = rows.Err()
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "database error")
+	}
+
+	return employees, nil
+}
+
+// GetEmployeeByUserIDAndLocationID gets Employee by UserID and LocationID
 func (s *employeeStore) GetEmployeesByEmployeeRoleID(ctx context.Context, employeeRoleID string) ([]*Employee, error) {
 	const op = "app/employeeStore.GetEmployeesByEmployeeRoleID"
 
 	query := `
-		SELECT id, location_id, name, profile_image_id, created_at, updated_at
+		SELECT id, location_id, name, user_id, employee_role_id, profile_image_id, created_at, updated_at
 		FROM employee
-		WHERE user_id=$1;
+		WHERE employee_role_id=$1;
 	`
 	employees := make([]*Employee, 0)
 
@@ -46,7 +85,11 @@ func (s *employeeStore) GetEmployeesByEmployeeRoleID(ctx context.Context, employ
 	for rows.Next() {
 		employee := &Employee{}
 
-		_ = rows.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
+		err = rows.Scan(&employee.ID, &employee.LocationID, &employee.Name, &employee.UserID, &employee.EmployeeRoleID, &employee.ProfileImageID, &employee.CreatedAt, &employee.UpdatedAt)
+
+		if err != nil {
+			return nil, errors.Wrap(op, err, "row scan error")
+		}
 
 		employees = append(employees, employee)
 	}

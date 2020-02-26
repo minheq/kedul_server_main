@@ -11,10 +11,24 @@ type mockLocationStore struct {
 	locations []*Location
 }
 
+func (s *mockLocationStore) GetLocationsByIDs(ctx context.Context, ids []string) ([]*Location, error) {
+	locations := []*Location{}
+
+	for _, l := range s.locations {
+		for _, id := range ids {
+			if l.ID == id {
+				locations = append(locations, l)
+			}
+		}
+	}
+
+	return locations, nil
+}
+
 func (s *mockLocationStore) GetLocationByID(ctx context.Context, id string) (*Location, error) {
-	for _, b := range s.locations {
-		if b.ID == id {
-			return b, nil
+	for _, l := range s.locations {
+		if l.ID == id {
+			return l, nil
 		}
 	}
 
@@ -28,8 +42,8 @@ func (s *mockLocationStore) StoreLocation(ctx context.Context, location *Locatio
 }
 
 func (s *mockLocationStore) UpdateLocation(ctx context.Context, location *Location) error {
-	for i, b := range s.locations {
-		if b.ID == location.ID {
+	for i, l := range s.locations {
+		if l.ID == location.ID {
 			s.locations[i] = location
 			break
 		}
@@ -39,8 +53,8 @@ func (s *mockLocationStore) UpdateLocation(ctx context.Context, location *Locati
 }
 
 func (s *mockLocationStore) DeleteLocation(ctx context.Context, location *Location) error {
-	for i, b := range s.locations {
-		if b.ID == location.ID {
+	for i, l := range s.locations {
+		if l.ID == location.ID {
 			s.locations = append(s.locations[:i], s.locations[i+1:]...)
 			break
 		}

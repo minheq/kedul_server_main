@@ -23,11 +23,13 @@ type Business struct {
 // BusinessService ...
 type BusinessService struct {
 	businessStore BusinessStore
+	locationStore LocationStore
+	employeeStore EmployeeStore
 }
 
 // NewBusinessService constructor for AuthService
-func NewBusinessService(businessStore BusinessStore) BusinessService {
-	return BusinessService{businessStore: businessStore}
+func NewBusinessService(businessStore BusinessStore, locationStore LocationStore, employeeStore EmployeeStore) BusinessService {
+	return BusinessService{businessStore: businessStore, locationStore: locationStore, employeeStore: employeeStore}
 }
 
 // GetBusinessByID ...
@@ -43,6 +45,42 @@ func (s *BusinessService) GetBusinessByID(ctx context.Context, id string) (*Busi
 	return business, nil
 }
 
+func (s *BusinessService) getBusinessesAsEmployeeByUserID(ctx context.Context, userID string) ([]*Business, error) {
+	const op = "app/businessService.getBusinessesAsEmployeeByUserID"
+
+	userAsEmployeeList, err := s.employeeStore.GetEmployeesByUserID(ctx, userID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get employees by user id")
+	}
+
+	locationIDs := []string{}
+
+	for _, employee := range userAsEmployeeList {
+		locationIDs = append(locationIDs, employee.LocationID)
+	}
+
+	locations, err := s.locationStore.GetLocationsByIDs(ctx, locationIDs)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get locations by location ids")
+	}
+
+	businessIDs := []string{}
+
+	for _, location := range locations {
+		businessIDs = append(businessIDs, location.BusinessID)
+	}
+
+	businesses, err := s.businessStore.GetBusinessesByIDs(ctx, businessIDs)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get businesses by businessIDs")
+	}
+
+	return businesses, nil
+}
+
 // GetBusinessesByUserID ...
 func (s *BusinessService) GetBusinessesByUserID(ctx context.Context, userID string, currentUser *auth.User) ([]*Business, error) {
 	const op = "app/businessService.GetBusinessesByUserID"
@@ -51,10 +89,35 @@ func (s *BusinessService) GetBusinessesByUserID(ctx context.Context, userID stri
 		return nil, errors.Unauthorized(op, fmt.Errorf("current user not owner"))
 	}
 
-	businesses, err := s.businessStore.GetBusinessesByUserID(ctx, userID)
+	businessesAsEmployee, err := s.getBusinessesAsEmployeeByUserID(ctx, userID)
 
 	if err != nil {
-		return nil, errors.Wrap(op, err, "failed to get businesses by user id")
+		return nil, errors.Wrap(op, err, "failed to get businesses by based on user as employee")
+	}
+
+	businessesAsOwner, err := s.businessStore.GetBusinessesByUserID(ctx, userID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get businesses by based on user as owner")
+	}
+
+	businesses := []*Business{}
+
+	for _, businessAsEmployee := range businessesAsEmployee {
+		businesses = append(businesses, businessAsEmployee)
+	}
+
+	for _, business := range businessesAsOwner {
+		alreadyExists := false
+		for _, appendedBusiness := range businesses {
+			if appendedBusiness.ID == business.ID {
+				alreadyExists = true
+			}
+		}
+
+		if alreadyExists == false {
+			businesses = append(businesses, business)
+		}
 	}
 
 	return businesses, nil

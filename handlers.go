@@ -183,6 +183,55 @@ func (s *server) handleUpdatePhoneNumberCheck(authService auth.Service) http.Han
 	}
 }
 
+type pageInfo struct {
+	HasNextPage     bool `json:"has_next_page"`
+	HasPreviousPage bool `json:"has_previous_page"`
+}
+
+type businessListResponse struct {
+	TotalCount int                 `json:"total_count,omitempty"`
+	PageInfo   *pageInfo           `json:"page_info,omitempty"`
+	Data       []*businessResponse `json:"data,omitempty"`
+}
+
+func newBusinessListResponse(businesses []*app.Business) *businessListResponse {
+	data := []*businessResponse{}
+
+	for _, business := range businesses {
+		data = append(data, newBusinessResponse(business))
+	}
+
+	return &businessListResponse{
+		Data: data,
+	}
+}
+
+func (rd *businessListResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+func (s *server) handleGetBusinessesByUserID(businessService app.BusinessService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "server.handleGetBusinessesByUserID"
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+
+		userID := chi.URLParam(r, "userID")
+
+		if userID == "" {
+			s.respondError(w, r, errors.Invalid(op, "missing param"))
+		}
+
+		businesses, err := businessService.GetBusinessesByUserID(r.Context(), userID, currentUser)
+
+		if err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		render.Render(w, r, newBusinessListResponse(businesses))
+	}
+}
+
 type businessResponse struct {
 	ID             string    `json:"id"`
 	UserID         string    `json:"user_id"`
