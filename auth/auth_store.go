@@ -113,7 +113,7 @@ func (s *store) DeleteVerificationCodeByID(ctx context.Context, id string) error
 
 // GetUserByID gets User by ID
 func (s *store) GetUserByID(ctx context.Context, id string) (*User, error) {
-	const op = "auth/store.GetUserByPhoneNumber"
+	const op = "auth/store.GetUserByID"
 
 	query := `
 		SELECT id, full_name, phone_number, country_code, is_phone_number_verified, created_at, updated_at

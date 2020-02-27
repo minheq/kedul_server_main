@@ -84,8 +84,8 @@ func (s *server) routes() {
 	// protected handlers
 	s.router.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(jwtauth.Authenticator)
-		r.Use(addCurrentUserContext(authService))
+		r.Use(s.authenticate)
+		r.Use(s.addCurrentUserContext(authService))
 
 		r.Get("/auth/current_user", s.handleGetCurrentUser(authService))
 		r.Post("/auth/update_phone_number_verify", s.handleUpdatePhoneNumberVerify(authService))
