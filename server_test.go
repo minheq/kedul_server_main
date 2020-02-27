@@ -256,4 +256,19 @@ func TestEndToEnd(t *testing.T) {
 			t.Error(fmt.Errorf("location name does not match. expected=%s, received=%s", location.Name, resp.Name))
 		}
 	})
+
+	t.Run("get user locations", func(t *testing.T) {
+		resp := &locationListResponse{}
+		err := client.get(fmt.Sprintf("/users/%s/businesses/%s/locations", user.ID, business.ID), resp)
+
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if len(resp.Data) != 1 {
+			t.Error(fmt.Errorf("there should be 1 business"))
+			return
+		}
+	})
 }

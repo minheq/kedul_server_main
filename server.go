@@ -93,6 +93,7 @@ func (s *server) routes() {
 		r.Post("/auth/update_user_profile", s.handleUpdateUserProfile(authService))
 
 		r.Get("/users/{userID}/businesses", s.handleGetBusinessesByUserID(businessService))
+		r.Get("/users/{userID}/businesses/{businessID}/locations", s.handleGetLocationsByUserIDAndBusinessID(locationService))
 
 		r.Post("/businesses", s.handleCreateBusiness(businessService))
 		r.Get("/businesses/{businessID}", s.handleGetBusiness(businessService))

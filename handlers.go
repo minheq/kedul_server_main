@@ -371,6 +371,55 @@ func (rd *locationResponse) Render(w http.ResponseWriter, r *http.Request) error
 	return nil
 }
 
+type locationListResponse struct {
+	TotalCount int                 `json:"total_count,omitempty"`
+	PageInfo   *pageInfo           `json:"page_info,omitempty"`
+	Data       []*locationResponse `json:"data,omitempty"`
+}
+
+func newLocationListResponse(locations []*app.Location) *locationListResponse {
+	data := []*locationResponse{}
+
+	for _, location := range locations {
+		data = append(data, newLocationResponse(location))
+	}
+
+	return &locationListResponse{
+		Data: data,
+	}
+}
+
+func (rd *locationListResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+func (s *server) handleGetLocationsByUserIDAndBusinessID(locationsService app.LocationService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "server.handleGetLocationsByUserIDAndBusinessID"
+		currentUser, _ := r.Context().Value(userCtxKey).(*auth.User)
+
+		userID := chi.URLParam(r, "userID")
+		businessID := chi.URLParam(r, "businessID")
+
+		if userID == "" {
+			s.respondError(w, r, errors.Invalid(op, "missing param"))
+		}
+
+		if businessID == "" {
+			s.respondError(w, r, errors.Invalid(op, "missing param"))
+		}
+
+		locations, err := locationsService.GetLocationsByUserIDAndBusinessID(r.Context(), userID, businessID, currentUser)
+
+		if err != nil {
+			s.respondError(w, r, err)
+			return
+		}
+
+		render.Render(w, r, newLocationListResponse(locations))
+	}
+}
+
 func (s *server) handleGetLocation(locationService app.LocationService, permissionsService app.PermissionService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "server.handleGetLocation"

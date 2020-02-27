@@ -58,6 +58,43 @@ func (s *LocationService) GetLocationByID(ctx context.Context, id string, actor 
 	return location, nil
 }
 
+// GetLocationsByUserIDAndBusinessID ...
+func (s *LocationService) GetLocationsByUserIDAndBusinessID(ctx context.Context, userID string, businessID string, currentUser *auth.User) ([]*Location, error) {
+	const op = "app/locationService.GetLocationsByUserID"
+
+	if userID != currentUser.ID {
+		return nil, errors.Unauthorized(op, fmt.Errorf("current user not owner"))
+	}
+
+	userAsEmployeeList, err := s.employeeStore.GetEmployeesByUserID(ctx, userID)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get employees by user id")
+	}
+
+	locationIDs := []string{}
+
+	for _, employee := range userAsEmployeeList {
+		locationIDs = append(locationIDs, employee.LocationID)
+	}
+
+	locations, err := s.locationStore.GetLocationsByIDs(ctx, locationIDs)
+
+	if err != nil {
+		return nil, errors.Wrap(op, err, "failed to get locations by location ids")
+	}
+
+	businessLocations := []*Location{}
+
+	for _, location := range locations {
+		if location.BusinessID == businessID {
+			businessLocations = append(businessLocations, location)
+		}
+	}
+
+	return businessLocations, nil
+}
+
 // CreateLocationInput ...
 type CreateLocationInput struct {
 	BusinessID     string `json:"business_id"`
