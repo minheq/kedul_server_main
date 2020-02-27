@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -79,7 +80,7 @@ func (s *EmployeeService) CreateEmployee(ctx context.Context, input *CreateEmplo
 		ID:             id,
 		LocationID:     input.LocationID,
 		ProfileImageID: input.ProfileImageID,
-		Name:           input.Name,
+		Name:           strings.TrimSpace(input.Name),
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
@@ -122,7 +123,7 @@ func (s *EmployeeService) UpdateEmployee(ctx context.Context, id string, input *
 	employee.UpdatedAt = time.Now()
 
 	if input.Name != "" {
-		employee.Name = input.Name
+		employee.Name = strings.TrimSpace(input.Name)
 	}
 	if input.ProfileImageID != "" {
 		employee.ProfileImageID = input.ProfileImageID

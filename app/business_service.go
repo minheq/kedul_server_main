@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -133,14 +134,14 @@ type CreateBusinessInput struct {
 func (s *BusinessService) CreateBusiness(ctx context.Context, userID string, input *CreateBusinessInput) (*Business, error) {
 	const op = "app/businessService.CreateBusiness"
 
-	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, input.Name)
+	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, strings.TrimSpace(input.Name))
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to get business by name")
 	}
 
 	if existingBusiness != nil {
-		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", input.Name))
+		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", strings.TrimSpace(input.Name)))
 	}
 
 	now := time.Now()
@@ -148,7 +149,7 @@ func (s *BusinessService) CreateBusiness(ctx context.Context, userID string, inp
 	business := &Business{
 		ID:             uuid.Must(uuid.New(), nil).String(),
 		UserID:         userID,
-		Name:           input.Name,
+		Name:           strings.TrimSpace(input.Name),
 		ProfileImageID: input.ProfileImageID,
 		CreatedAt:      now,
 		UpdatedAt:      now,
@@ -173,14 +174,14 @@ type UpdateBusinessInput struct {
 func (s *BusinessService) UpdateBusiness(ctx context.Context, id string, input *UpdateBusinessInput, currentUser *auth.User) (*Business, error) {
 	const op = "app/businessService.UpdateBusiness"
 
-	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, input.Name)
+	existingBusiness, err := s.businessStore.GetBusinessByName(ctx, strings.TrimSpace(input.Name))
 
 	if err != nil {
 		return nil, errors.Unexpected(op, err, "failed to get business by name")
 	}
 
 	if existingBusiness != nil {
-		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", input.Name))
+		return nil, errors.Invalid(op, fmt.Sprintf("business with name %s already exists", strings.TrimSpace(input.Name)))
 	}
 
 	business, err := s.businessStore.GetBusinessByID(ctx, id)
@@ -200,7 +201,7 @@ func (s *BusinessService) UpdateBusiness(ctx context.Context, id string, input *
 	business.UpdatedAt = time.Now()
 
 	if input.Name != "" {
-		business.Name = input.Name
+		business.Name = strings.TrimSpace(input.Name)
 	}
 	if input.ProfileImageID != "" {
 		business.ProfileImageID = input.ProfileImageID

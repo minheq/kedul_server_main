@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -257,7 +258,7 @@ func (s *LocationService) UpdateLocation(ctx context.Context, id string, input *
 
 	location.UpdatedAt = time.Now()
 	if input.Name != "" {
-		location.Name = input.Name
+		location.Name = strings.TrimSpace(input.Name)
 	}
 	if input.ProfileImageID != "" {
 		location.ProfileImageID = input.ProfileImageID

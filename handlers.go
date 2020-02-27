@@ -191,7 +191,7 @@ type pageInfo struct {
 type businessListResponse struct {
 	TotalCount int                 `json:"total_count,omitempty"`
 	PageInfo   *pageInfo           `json:"page_info,omitempty"`
-	Data       []*businessResponse `json:"data,omitempty"`
+	Data       []*businessResponse `json:"data"`
 }
 
 func newBusinessListResponse(businesses []*app.Business) *businessListResponse {
@@ -374,7 +374,7 @@ func (rd *locationResponse) Render(w http.ResponseWriter, r *http.Request) error
 type locationListResponse struct {
 	TotalCount int                 `json:"total_count,omitempty"`
 	PageInfo   *pageInfo           `json:"page_info,omitempty"`
-	Data       []*locationResponse `json:"data,omitempty"`
+	Data       []*locationResponse `json:"data"`
 }
 
 func newLocationListResponse(locations []*app.Location) *locationListResponse {

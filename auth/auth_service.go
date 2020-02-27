@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -263,7 +264,7 @@ func (as *Service) UpdateUserProfile(ctx context.Context, input *UpdateUserProfi
 	user.UpdatedAt = time.Now()
 
 	if input.FullName != "" {
-		user.FullName = input.FullName
+		user.FullName = strings.TrimSpace(input.FullName)
 	}
 	if input.ProfileImageID != "" {
 		user.ProfileImageID = input.ProfileImageID

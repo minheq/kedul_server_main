@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -81,7 +82,7 @@ func (s *EmployeeRoleService) CreateEmployeeRole(ctx context.Context, input *Cre
 	employeeRole := &EmployeeRole{
 		ID:            uuid.Must(uuid.New(), nil).String(),
 		LocationID:    input.LocationID,
-		Name:          input.Name,
+		Name:          strings.TrimSpace(input.Name),
 		PermissionIDs: input.PermissionIDs,
 		Permissions:   permissions,
 		CreatedAt:     now,
@@ -130,7 +131,7 @@ func (s *EmployeeRoleService) UpdateEmployeeRole(ctx context.Context, id string,
 	employeeRole.UpdatedAt = time.Now()
 
 	if input.Name != "" {
-		employeeRole.Name = input.Name
+		employeeRole.Name = strings.TrimSpace(input.Name)
 	}
 	if input.PermissionIDs != nil {
 		employeeRole.PermissionIDs = input.PermissionIDs
